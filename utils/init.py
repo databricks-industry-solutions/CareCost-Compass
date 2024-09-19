@@ -1,0 +1,76 @@
+# Databricks notebook source
+# MAGIC %md
+# MAGIC #### Install required libraries
+
+# COMMAND ----------
+
+# MAGIC %pip install -q mlflow==2.12.2 databricks-vectorsearch==0.40 databricks-sdk==0.28.0 langchain==0.3.0 langchain-community mlflow[databricks] 
+# MAGIC %pip install databricks-agents
+# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ##### Define variables and utility functions
+
+# COMMAND ----------
+
+catalog = "main"
+schema = "care_cost"
+
+sbc_folder = "sbc"
+cpt_folder = "cpt"
+
+sbc_files = ["SBC_client1.pdf","SBC_client2.pdf"]
+cpt_file = "cpt_codes.txt"
+
+member_table_name = "member_enrolment"
+member_accumulators_table_name = "member_accumulators"
+cpt_code_table_name = "cpt_codes"
+procedure_cost_table_name = "procedure_cost"
+sbc_details_table_name = "sbc_details"
+
+client1_name = "sugarshack"
+client2_name = "chillystreet"
+
+sbc_folder_path = f"/Volumes/{catalog}/{schema}/{sbc_folder}"
+cpt_folder_path = f"/Volumes/{catalog}/{schema}/{cpt_folder}"
+
+# COMMAND ----------
+
+current_path = dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get()
+project_root_path = current_path.split("/")[:-1]
+
+# COMMAND ----------
+
+db_host_name = spark.conf.get('spark.databricks.workspaceUrl')
+db_host_url = f"https://{db_host_name}"
+db_token = dbutils.notebook.entry_point.getDbutils().notebook().getContext().apiToken().getOrElse(None)
+
+# COMMAND ----------
+
+user_email = dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()
+user_name = user_email.split('@')[0].replace('.','_')
+user_prefix = f"{user_name[0:4]}{str(len(user_name)).rjust(3, '0')}"
+
+# COMMAND ----------
+
+#Create mlflow experiment
+from datetime import datetime
+import mlflow 
+
+mlflow.set_registry_uri("databricks-uc")
+mlflow_experiment_base_path = f"Users/{user_email}/mlflow_experiments"
+
+def set_mlflow_experiment(experiment_tag):
+    dbutils.fs.mkdirs(f"file:/Workspace/{mlflow_experiment_base_path}")
+    experiment_path = f"/{mlflow_experiment_base_path}/{experiment_tag}"
+    return mlflow.set_experiment(experiment_path)
+
+
+# COMMAND ----------
+
+print(f"Using catalog: {catalog}")
+print(f"Using schema: {schema}")
+print(f"Project root: {project_root_path}")
+print(f"MLFlow Experiment Path: {mlflow_experiment_base_path}")
