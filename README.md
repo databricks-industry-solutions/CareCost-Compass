@@ -1,6 +1,6 @@
 # CareCost-Compass
 
-###Overview
+### Overview
 Payers in the health care industry are organizations — such as health plan providers, Medicare, and Medicaid — that set service rates, collect payments, process claims, and pay provider claims. Eg: Cigna, United Health etc
 
 When an individual need a service or care, most call the customer service representative of their payer on the phone and explain their situation to get an estimate of the cost of their treatment, service or procedure.
@@ -18,7 +18,7 @@ Care Cost Compass is a Gen AI application that
 
 The application will showcase best practices and platform capabilities like vector search, custom pyfunc models, guard rails, online tables, llm evaluation and model serving
 
-###Meet LemonDrop
+### Meet LemonDrop
 Meet our (imaginary) payor, **LemonDrop**,who is a nationwide Health Insurance Provider and offers multiple health insurance products to customers via their employers.  Each employer being a client of **LemonDrop**
 
 The Summary of Benefit document that describes the negotiated coverage and deductibles for each client is available in Unity Catalog volume. Data Ingestion workflows make sure these documents are kept up-to-date every plan year. The procedure cost is tracked by CPT code.
@@ -31,7 +31,7 @@ Currently **LemonDrop** has two clients; **SugarShack** and **ChillyStreet**. **
 
 **LemonDrop** is developing this Compound Gen AI Agent application to answer customer questions related to cost of a procedure, so that customer service agents take care of more important calls that really needs manual attention.
 
-###Workflow
+### Workflow
 A typical workflow for a procedure cost estimation is as below
 - Understand the client_id of the customer who is asking the question
 - Retrieve the appropriate negotiated benefit related to the question
@@ -43,7 +43,7 @@ A typical workflow for a procedure cost estimation is as below
 
 In this project, we are attempting to create a Compound Gen AI application that perform these steps and derive the cost accurately. Many simplifying assumptions have been made in the sample data to keep the scope of this work limited to the design, development and deployment of the agentic application
 
-###Use in Databricks Workspace
+### Use in Databricks Workspace
 To run this demo in a Databricks Workspace, follow the below steps
 1. Use [Dabaricks Git Folders](https://docs.databricks.com/en/repos/index.html) and clone the repo into your workspace
 2. Create a `single-node` cluster for running the notebooks.
