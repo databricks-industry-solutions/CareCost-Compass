@@ -9,7 +9,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Create building blocks for the Gen AI Application
+# MAGIC ## Adding building blocks for the Gen AI Application
 # MAGIC
 # MAGIC All the building blocks will be developed as Tools
 
@@ -83,7 +83,46 @@ class RetrieverConfig(BaseModel):
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ###Create Content Filter
+# MAGIC ###Add Member Id Retriever
+# MAGIC
+
+# COMMAND ----------
+
+class MemberIdRetrieverInput(BaseModel):
+    question: str = Field(description="Sentence containing member_id")
+
+class  MemberIdRetriever(BaseTool):
+    name : str = " MemberIdRetriever"
+    description : str = "useful for extracting member id from question"
+    args_schema : Type[BaseModel] = MemberIdRetrieverInput
+    model_endpoint_name:str = None
+
+    prompt:str = "Extract the member id from the question. \
+        Only respond with a single word which is the member id. \
+        Do not include any other  details in response.\
+        Question:{question}"
+
+    def __init__(self, model_endpoint_name : str):
+        super().__init__()
+        self.model_endpoint_name = model_endpoint_name
+    
+    @mlflow.trace(name="get_member_id", span_type="func")
+    def get_member_id(self, question:str) -> str: 
+        chain = build_api_chain(self.model_endpoint_name, self.prompt)
+        category = chain.run(question=question)
+        return category.strip()
+    
+    def _run(self, question:str, run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
+        return self.get_member_id(question)
+    
+    def _arun(self, question:str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> str:
+        return self.get_member_id(question)
+
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ###Adding Content Filter
 # MAGIC We will create the content filter component as a Natural Language Classfier
 # MAGIC
 
@@ -130,11 +169,10 @@ class QuestionClassifier(BaseTool):
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ###Create Benefit RAG
+# MAGIC ###Adding Benefit RAG
 
 # COMMAND ----------
 
-#Expects DATABRICKS_TOKEN and DATABRICKS_HOST env vars
 class BenefitsRetriever():    
     retriever_config: RetrieverConfig = None
     vector_index: VectorSearchIndex = None
@@ -143,9 +181,7 @@ class BenefitsRetriever():
         super().__init__()
         self.retriever_config = retriever_config
         
-        vsc = VectorSearchClient(workspace_url=os.environ["DATABRICKS_HOST"], 
-                                  personal_access_token=os.environ["DATABRICKS_TOKEN"],
-                                  disable_notice=True)
+        vsc = VectorSearchClient()
         
         self.vector_index = vsc.get_index(endpoint_name=self.retriever_config.vector_search_endpoint_name,
                                           index_name=self.retriever_config.vector_index_name)
@@ -225,7 +261,7 @@ class BenefitsRAG(BaseTool):
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ###Create Procedure Retriever
+# MAGIC ###Adding Procedure Retriever
 
 # COMMAND ----------
 
@@ -245,9 +281,7 @@ class ProcedureRetriever(BaseTool):
         super().__init__()
         self.retriever_config = retriever_config
         
-        vsc = VectorSearchClient(workspace_url=os.environ["DATABRICKS_HOST"], 
-                                  personal_access_token=os.environ["DATABRICKS_TOKEN"],
-                                  disable_notice=True)
+        vsc = VectorSearchClient()
         
         self.vector_index = vsc.get_index(endpoint_name=self.retriever_config.vector_search_endpoint_name,
                                           index_name=self.retriever_config.vector_index_name)
@@ -274,7 +308,7 @@ class ProcedureRetriever(BaseTool):
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ###Create Client Id Lookup
+# MAGIC ###Adding Client Id Lookup
 
 # COMMAND ----------
 
@@ -306,7 +340,7 @@ class ClientIdLookup(BaseTool):
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ###Create Procedure Cost Lookup
+# MAGIC ###Adding Procedure Cost Lookup
 
 # COMMAND ----------
 
@@ -336,8 +370,19 @@ class ProcedureCostLookup(BaseTool):
 
 # COMMAND ----------
 
+rr = pd.DataFrame( {
+    "messages" : [
+        {"content":"Member id is 1234.","role":"user" },
+        {"content":"an mri of shoulder is needed. How much will it cost me?","role":"user" }
+        ]
+})
+
+rr.to_dict(orient="records")
+
+# COMMAND ----------
+
 # MAGIC %md
-# MAGIC ###Create Member Accumulators Lookup
+# MAGIC ###Adding Member Accumulators Lookup
 
 # COMMAND ----------
 
@@ -368,7 +413,7 @@ class MemberAccumulatorsLookup(BaseTool):
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ###Create Cost Calculator
+# MAGIC ###Adding Cost Calculator
 # MAGIC Cost Calculator is a deterministic method that takes member benefits, deductibles and procedure cost to calculate the out of pocket cost that member could be paying for the procedure
 
 # COMMAND ----------
@@ -468,7 +513,7 @@ class MemberCostCalculator(BaseTool):
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Create Summarizer
+# MAGIC ### Adding Summarizer
 
 # COMMAND ----------
 

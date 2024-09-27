@@ -4,7 +4,7 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install -q mlflow==2.12.2 databricks-vectorsearch==0.40 databricks-sdk==0.28.0 langchain==0.3.0 langchain-community mlflow[databricks] 
+# MAGIC %pip install -q mlflow==2.16.2 databricks-vectorsearch==0.40 databricks-sdk==0.28.0 langchain==0.3.0 langchain-community mlflow[databricks] 
 # MAGIC %pip install databricks-agents
 # MAGIC dbutils.library.restartPython()
 
@@ -14,6 +14,12 @@
 # MAGIC ##### Define variables and utility functions
 
 # COMMAND ----------
+
+import pytz
+from datetime import datetime
+
+timezone_for_logging = "US/Eastern"
+logging_timezone = pytz.timezone(timezone_for_logging)
 
 catalog = "main"
 schema = "care_cost"
@@ -32,6 +38,8 @@ sbc_details_table_name = "sbc_details"
 
 client1_name = "sugarshack"
 client2_name = "chillystreet"
+
+experiment_tag = f"carecost_compass_agent"
 
 sbc_folder_path = f"/Volumes/{catalog}/{schema}/{sbc_folder}"
 cpt_folder_path = f"/Volumes/{catalog}/{schema}/{cpt_folder}"

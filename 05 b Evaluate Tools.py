@@ -13,6 +13,23 @@
 
 # COMMAND ----------
 
+#create a master run to hold all evaluation runs
+experiment = set_mlflow_experiment(experiment_tag)
+mlflow.start_run(experiment_id=experiment.experiment_id,
+                              run_name=f"01_tool_evaluation_runs")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ####Test Member Id Retriever
+
+# COMMAND ----------
+
+mi = MemberIdRetriever("databricks-mixtral-8x7b-instruct")
+mi.get_member_id("Member id is:1234.")
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ####Test and Evaluate QuestionClassifier
 
@@ -58,32 +75,36 @@ eval_data = pd.DataFrame(
 
 # COMMAND ----------
 
-experiment_tag = f"carecost_compass_question_classifier"
-experiment = set_mlflow_experiment(experiment_tag)
+time_str = datetime.now(pytz.utc).astimezone(logging_timezone).strftime('%Y-%m-%d-%H:%M:%S-%Z')
 
-models_to_evaluate = ["databricks-meta-llama-3-1-70b-instruct", "databricks-mixtral-8x7b-instruct"]
+with mlflow.start_run(experiment_id=experiment.experiment_id,
+                                   run_name=f"01_question_classifier_{time_str}",
+                                   nested=True) as qc_evaluate_run:
 
-results = []
-for model_name in models_to_evaluate:
-    
-    with mlflow.start_run(
-        experiment_id=experiment.experiment_id,
-        run_name=model_name) as run:
+    models_to_evaluate = ["databricks-meta-llama-3-1-70b-instruct", "databricks-mixtral-8x7b-instruct"]
 
-        qc = QuestionClassifier(model_endpoint_name=model_name, 
-                                categories_and_description=categories_and_description)
-        tr = ToolRunner(qc, eval_data, tool_input_columns=["questions"])
+    results = []
+    for model_name in models_to_evaluate:
+        
+        with mlflow.start_run(
+            experiment_id=experiment.experiment_id,
+            run_name=model_name,
+            nested=True) as run:
 
-        result = mlflow.evaluate(
-            tr.run_tool,
-            eval_data,
-            targets="ground_truth",
-            model_type="question-answering",
-        )
-        results.append({"model":model_name,
-                        "result":result,
-                        "experiment_id":experiment.experiment_id,
-                        "run_id":run.info.run_id})
+            qc = QuestionClassifier(model_endpoint_name=model_name, 
+                                    categories_and_description=categories_and_description)
+            tr = ToolRunner(qc, eval_data, tool_input_columns=["questions"])
+
+            result = mlflow.evaluate(
+                tr.run_tool,
+                eval_data,
+                targets="ground_truth",
+                model_type="question-answering",
+            )
+            results.append({"model":model_name,
+                            "result":result,
+                            "experiment_id":experiment.experiment_id,
+                            "run_id":run.info.run_id})
 
 # COMMAND ----------
 
@@ -152,49 +173,53 @@ eval_data = pd.DataFrame(
 
 # COMMAND ----------
 
-experiment_tag = f"carecost_compass_benefit_rag"
-experiment = set_mlflow_experiment(experiment_tag)
+time_str = datetime.now(pytz.utc).astimezone(logging_timezone).strftime('%Y-%m-%d-%H:%M:%S-%Z')
 
-models_to_evaluate = ["databricks-meta-llama-3-1-70b-instruct", "databricks-dbrx-instruct"]
-
-results = []
-for model_name in models_to_evaluate:
+with mlflow.start_run(experiment_id=experiment.experiment_id,
+                                   run_name=f"02_benefits_rag_{time_str}",
+                                   nested=True) as qc_evaluate_run:
     
-    with mlflow.start_run(
-        experiment_id=experiment.experiment_id,
-        run_name=model_name) as run:
+    models_to_evaluate = ["databricks-meta-llama-3-1-70b-instruct", "databricks-dbrx-instruct"]
 
-        retriever_config = RetrieverConfig(vector_search_endpoint_name="care_cost_vs_endpoint",
-                            vector_index_name=f"{catalog}.{schema}.{sbc_details_table_name}_index",
-                            vector_index_id_column="id",
-                            retrieve_columns=["id","content"])
+    results = []
+    for model_name in models_to_evaluate:
         
-        br = BenefitsRAG(model_endpoint_name=model_name, retriever_config=retriever_config)
-        tr = ToolRunner(br, eval_data, ["question","client_id"],"retrieved_documents",True)
-        tool_result = tr.run_tool(eval_data)
+        with mlflow.start_run(
+            experiment_id=experiment.experiment_id,
+            run_name=model_name,
+            nested=True) as run:
 
-        retrieved_documents =    [
-                [{"content":doc.page_content} for doc in doclist]  
-            for doclist in getattr(tr, "retrieved_documents")]
+            retriever_config = RetrieverConfig(vector_search_endpoint_name="care_cost_vs_endpoint",
+                                vector_index_name=f"{catalog}.{schema}.{sbc_details_table_name}_index",
+                                vector_index_id_column="id",
+                                retrieve_columns=["id","content"])
+            
+            br = BenefitsRAG(model_endpoint_name=model_name, retriever_config=retriever_config)
+            tr = ToolRunner(br, eval_data, ["question","client_id"],"retrieved_documents",True)
+            tool_result = tr.run_tool(eval_data)
 
-        #Let us create the eval_df structure
-        eval_df = pd.DataFrame({
-            "request":eval_data["question"], #<<Request that was sent
-            "response":tool_result, #<<Response from RAG
-            "retrieved_context": retrieved_documents, #<< Retrieved documents from retriever
-            "expected_response":eval_data["expected_response"] #<<Expected correct response
-        })
+            retrieved_documents =    [
+                    [{"content":doc.page_content} for doc in doclist]  
+                for doclist in getattr(tr, "retrieved_documents")]
 
-        #here we will use the Mosaic AI Agent Evaluation framework to evaluate the RAG model
-        result = mlflow.evaluate(
-            data=eval_df,
-            model_type="databricks-agent"
-        )
+            #Let us create the eval_df structure
+            eval_df = pd.DataFrame({
+                "request":eval_data["question"], #<<Request that was sent
+                "response":tool_result, #<<Response from RAG
+                "retrieved_context": retrieved_documents, #<< Retrieved documents from retriever
+                "expected_response":eval_data["expected_response"] #<<Expected correct response
+            })
 
-        results.append({"model":model_name,
-                        "result":result,
-                        "experiment_id":experiment.experiment_id,
-                        "run_id":run.info.run_id})
+            #here we will use the Mosaic AI Agent Evaluation framework to evaluate the RAG model
+            result = mlflow.evaluate(
+                data=eval_df,
+                model_type="databricks-agent"
+            )
+
+            results.append({"model":model_name,
+                            "result":result,
+                            "experiment_id":experiment.experiment_id,
+                            "run_id":run.info.run_id})
 
 # COMMAND ----------
 
@@ -323,4 +348,5 @@ print(summary1)
 
 # COMMAND ----------
 
-
+#stop all active runs
+mlflow.end_run()
