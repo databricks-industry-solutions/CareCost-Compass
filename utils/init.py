@@ -4,9 +4,7 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install -q mlflow==2.16.2 databricks-vectorsearch==0.40 databricks-sdk==0.28.0 langchain==0.3.0 langchain-community mlflow[databricks] 
-# MAGIC %pip install databricks-agents
-# MAGIC dbutils.library.restartPython()
+dbutils.library.restartPython()
 
 # COMMAND ----------
 
