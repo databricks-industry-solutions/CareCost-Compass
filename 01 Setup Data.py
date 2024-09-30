@@ -1,7 +1,18 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Prepare Data
-# MAGIC Let us create some synthetic data to work with. 
+# MAGIC Let us create some synthetic data to work with. This notebook will create CATALOG and SCHEMA if it does not exist and create the below data tables.
+# MAGIC
+# MAGIC **member_enrolment**: Table containing member enrolment information like client and plan_id
+# MAGIC
+# MAGIC **member_accumulators**: Table containing member accumulators like deductibles and out of pocket spent
+# MAGIC
+# MAGIC **cpt_codes**: Table containing CPT codes and descriptions
+# MAGIC
+# MAGIC **procedure_cost**: Table containing negotiated cost of each procedure. 
+# MAGIC
+# MAGIC In addition to these tables, this notebook creates a Unity Catalog Volume and store the Summary of Benefit PDF files and CPT Code CSV files in appropriate folders
+# MAGIC
 
 # COMMAND ----------
 
@@ -43,7 +54,7 @@ dbutils.fs.cp(f"file:/Workspace/{'/'.join(project_root_path)}/resources/{cpt_fil
 
 # MAGIC %md
 # MAGIC #### Create Data Tables
-# MAGIC - Member Table: Contains member details including the client id
+# MAGIC - Member Enrolment Table: Contains member details including the client id
 # MAGIC - Member Accumulator Table: Contain member year to date deductible accumulator
 # MAGIC - Procedure Cost Table: Contain estimated cost of all the covered procedures
 # MAGIC
@@ -58,7 +69,7 @@ import datetime
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #####`member`
+# MAGIC #####`member_enrolment`
 
 # COMMAND ----------
 
@@ -86,6 +97,11 @@ spark.catalog.createTable(f"{catalog}.{schema}.{member_table_name}", schema=memb
 member.write.mode("append").saveAsTable(f"{catalog}.{schema}.{member_table_name}")
 
 spark.sql(f"ALTER TABLE {catalog}.{schema}.{member_table_name} ADD CONSTRAINT {member_table_name}_pk PRIMARY KEY( member_id )")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ###### Inspect and Verify `Data`
 
 # COMMAND ----------
 
@@ -124,6 +140,11 @@ spark.catalog.createTable(f"{catalog}.{schema}.{member_accumulators_table_name}"
 member_accumulators.write.mode("append").saveAsTable(f"{catalog}.{schema}.{member_accumulators_table_name}")
 
 spark.sql(f"ALTER TABLE {catalog}.{schema}.{member_accumulators_table_name} ADD CONSTRAINT {member_accumulators_table_name}_pk PRIMARY KEY( member_id)")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ###### Inspect and Verify `Data`
 
 # COMMAND ----------
 
@@ -174,6 +195,11 @@ spark.sql(f"ALTER TABLE {catalog}.{schema}.{cpt_code_table_name} ADD CONSTRAINT 
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ###### Inspect and Verify `Data`
+
+# COMMAND ----------
+
 display(cpt_df)
 
 # COMMAND ----------
@@ -207,6 +233,14 @@ procedure_cost = (
 procedure_cost.write.mode("append").saveAsTable(f"{catalog}.{schema}.{procedure_cost_table_name}")
 
 spark.sql(f"ALTER TABLE {catalog}.{schema}.{procedure_cost_table_name} ADD CONSTRAINT {procedure_cost_table_name}_pk PRIMARY KEY( procedure_code )")
+
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ###### Inspect and Verify `Data`
+
+# COMMAND ----------
 
 display(spark.table(f"{catalog}.{schema}.{procedure_cost_table_name}"))
 

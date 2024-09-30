@@ -34,7 +34,26 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #####Install libraries and import utility methods
+# MAGIC ##### Setting up `camelot`
+# MAGIC [Camelot](https://camelot-py.readthedocs.io/en/master/) is one of the Python librareis that can help extract tabular data from PDFs. Camelot provides:
+# MAGIC
+# MAGIC **Configurability**: Camelot gives you control over the table extraction process with tweakable settings.
+# MAGIC
+# MAGIC **Metrics**: You can discard bad tables based on metrics like accuracy and whitespace, without having to manually look at each table.
+# MAGIC
+# MAGIC **Output**: Each table is extracted into a pandas DataFrame, which seamlessly integrates into ETL and data analysis workflows. You can also export tables to multiple formats, which include CSV, JSON, Excel, HTML, Markdown, and Sqlite.
+# MAGIC
+# MAGIC **NOTE:** Camelot only works with text-based PDFs and not scanned documents. For processing scanned PDF documents, we might have to change the PDF reading library
+# MAGIC
+
+# COMMAND ----------
+
+dbutils.library.restartPython()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #####Install other libraries and import utility methods
 
 # COMMAND ----------
 
@@ -43,19 +62,11 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ##### Setting up `camelot`
-# MAGIC
-
-# COMMAND ----------
-
-# MAGIC %pip install --quiet opencv-python==4.8.0.74 ghostscript camelot-py
-# MAGIC %pip install --quiet typing-inspect==0.8.0 typing_extensions==4.5.0
-# MAGIC dbutils.library.restartPython()
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ##### Implement pdf reading using `camelot`
+# MAGIC
+# MAGIC Let us create some utility methods to read each data sections from the Summary of Benefits and Coverage (SBC) document. 
+# MAGIC
+# MAGIC **NOTE**:These methods are kept simple for demonstration, but could be extended to generalize for different SBC formats.
 
 # COMMAND ----------
 
@@ -159,11 +170,10 @@ def pdf_to_document(pdf_file):
 
 import pandas as pd
 
-client_list = [client1_name, client2_name]
 doc_list = [f"{sbc_folder_path}/{sbc_files[0]}",f"{sbc_folder_path}/{sbc_files[1]}"]
 
 pd_sbc_details = pd.DataFrame({
-        "client" : client_list, 
+        "client" : client_names, 
         "sbc_file_name": doc_list
     })
 
@@ -171,6 +181,11 @@ pd_sbc_details = pd.DataFrame({
 # COMMAND ----------
 
 display(pd_sbc_details)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Using Spark to load and chunk the PDF documents for scalability
 
 # COMMAND ----------
 
@@ -189,6 +204,11 @@ sbc_details = (spark
 # COMMAND ----------
 
 display(sbc_details)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ###Save the SBC data to a Delta table in Unity Catalog
 
 # COMMAND ----------
 

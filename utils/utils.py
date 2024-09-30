@@ -88,6 +88,41 @@ def wait_for_model_serving_endpoint_to_be_ready(ep_name):
           break
     raise Exception(f"Couldn't start the endpoint, timeout, please check your endpoint for more details: {state}")
 
+def create_delta_sync_vector_search_index(vector_search_endpoint_name, 
+                 index_name, 
+                 source_table_name, 
+                 primary_key_column, 
+                 embedding_source_column, 
+                 embedding_endpoint_name,
+                 update_mode):
+    
+    vsc = VectorSearchClient(disable_notice=True)
+    
+    index_ready = False
+    index_exists = False
+    try:
+        index_info = vsc.get_index(endpoint_name=vector_search_endpoint_name,
+                                   index_name=index_name)
+        print(f"Index {index_name} already exists")
+        index_exists = True
+    except:
+        print(f"Creating Index {index_name} ")
+
+    if not index_exists:
+        index = vsc.create_delta_sync_index(
+            endpoint_name=vector_search_endpoint_name,
+            source_table_name=source_table_name,
+            index_name=index_name,
+            pipeline_type=update_mode,
+            primary_key=primary_key_column,
+            embedding_source_column=embedding_source_column,
+            embedding_model_endpoint_name=embedding_endpoint_name
+        )
+
+    wait_for_index_to_be_ready(vsc, vector_search_endpoint_name, index_name)
+
+    return vsc.get_index(endpoint_name=vector_search_endpoint_name,index_name=index_name)
+
 # COMMAND ----------
 
 def create_online_table(fq_table_name : str, primary_key_columns : [str]):
