@@ -1,10 +1,16 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC #### Create catalog, schema and volumes
+# MAGIC # Prepare Data
+# MAGIC Let us create some synthetic data to work with. 
 
 # COMMAND ----------
 
 # MAGIC %run ./utils/init
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ####Create Catalog
 
 # COMMAND ----------
 
@@ -39,11 +45,9 @@ dbutils.fs.cp(f"file:/Workspace/{'/'.join(project_root_path)}/resources/{cpt_fil
 # MAGIC #### Create Data Tables
 # MAGIC - Member Table: Contains member details including the client id
 # MAGIC - Member Accumulator Table: Contain member year to date deductible accumulator
-# MAGIC - Procedure Cost Table: Contain estimated cost of a procedure
+# MAGIC - Procedure Cost Table: Contain estimated cost of all the covered procedures
 # MAGIC
-# MAGIC ######Payor name: LemonDrop
-# MAGIC ######Client1 : SugarShack
-# MAGIC ######Client2 : ChillyStreet 
+# MAGIC
 
 # COMMAND ----------
 
@@ -68,9 +72,9 @@ member_table_schema = StructType([
 ])
 
 member_data = [
-    ("1234","sugarshack","P1", datetime.date(2024,1,1), datetime.date(2024,12,31),"Y" ),
-    ("2345","sugarshack","P1", datetime.date(2024,1,1), datetime.date(2024,12,31),"Y" ),
-    ("7890","chillystreet","P2", datetime.date(2024,1,1), datetime.date(2024,12,31),"Y" ),
+    ("1234",client_names[0],"P1", datetime.date(2024,1,1), datetime.date(2024,12,31),"Y" ),
+    ("2345",client_names[0],"P1", datetime.date(2024,1,1), datetime.date(2024,12,31),"Y" ),
+    ("7890",client_names[1],"P2", datetime.date(2024,1,1), datetime.date(2024,12,31),"Y" ),
 ]
 
 member = spark.createDataFrame(member_data, schema=member_table_schema)

@@ -17,28 +17,42 @@
 
 import pytz
 from datetime import datetime
+#TODO:
+####CHANGE ME
 
+#Timezone that you want to use for mlflow logging
 timezone_for_logging = "US/Eastern"
 logging_timezone = pytz.timezone(timezone_for_logging)
 
+#catalog to use for creating data tables and keeping other resources
+#You need necessary privileges to create, delete tables, functions, and models
 catalog = "main"
+#schema to use for creating data tables and keeping other resources
+#You need necessary privileges to create, delete tables, functions, and model
 schema = "care_cost"
 
+#The Volume folder where SBC files will be copied to
 sbc_folder = "sbc"
+#The Volume folder where CPT files will be copied to
 cpt_folder = "cpt"
 
+#List of sbc files
 sbc_files = ["SBC_client1.pdf","SBC_client2.pdf"]
-cpt_file = "cpt_codes.txt"
+#imaginary client names for each sbc file
+client_names = ["sugarshack","chillystreet"]
+#Imaginary Payor name
+payor_name = "LemonDrop"
 
+#cpt code file name
+cpt_file = "cpt_codes.txt"
+#Data table names
 member_table_name = "member_enrolment"
 member_accumulators_table_name = "member_accumulators"
 cpt_code_table_name = "cpt_codes"
 procedure_cost_table_name = "procedure_cost"
 sbc_details_table_name = "sbc_details"
 
-client1_name = "sugarshack"
-client2_name = "chillystreet"
-
+#Mlflow experiment tag
 experiment_tag = f"carecost_compass_agent"
 
 sbc_folder_path = f"/Volumes/{catalog}/{schema}/{sbc_folder}"
