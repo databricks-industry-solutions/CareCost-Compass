@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC # Prepare Data
 # MAGIC
-# MAGIC <img src="./resources/build_01.png" alt="Prepare Data" width="700"/>
+# MAGIC <img src="./resources/build_01.png" alt="Prepare Data" width="900"/>
 # MAGIC
 # MAGIC
 # MAGIC Let us create some synthetic data to work with. This notebook will create CATALOG and SCHEMA if it does not exist and create the below data tables.

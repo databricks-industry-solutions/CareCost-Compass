@@ -49,7 +49,7 @@ In this project, we are attempting to create a Compound Gen AI application that 
 ### Build the Solution in Databricks Workspace
 The given notebooks will build all the application components step-by-step. The whole process looks like this
 
-<img src="./resources/build_full.png" alt="Full Build" width="700"/>``
+<img src="./resources/build_full.png" alt="Full Build" width="700"/>
 
 To run this demo in a Databricks Workspace, follow the below steps
 1. Use [Dabaricks Git Folders](https://docs.databricks.com/en/repos/index.html) and clone the repo into your workspace

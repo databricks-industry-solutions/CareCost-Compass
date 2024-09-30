@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC ###Create All Tools
 # MAGIC
-# MAGIC <img src="./resources/build_05.png" alt="Create Tools" width="700"/>
+# MAGIC <img src="./resources/build_05.png" alt="Create Tools" width="900" />
 
 # COMMAND ----------
 

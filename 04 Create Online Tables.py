@@ -5,7 +5,7 @@
 # MAGIC
 # MAGIC Let us now create the required Online Tables
 # MAGIC
-# MAGIC <img src="./resources/build_04.png" alt="Online Tables" width="700"/>
+# MAGIC <img src="./resources/build_04.png" alt="Online Tables" width="900"/>
 # MAGIC
 # MAGIC We will be needing online tables for our `member_enrolment`, `member_accumulatord` and `procedure_cost` table.
 
