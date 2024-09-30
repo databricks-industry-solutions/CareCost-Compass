@@ -3,7 +3,7 @@
 # MAGIC ###Assemble the Care Cost Compass Application
 # MAGIC We will assemble our compound gen ai application as a custom pyfunc model 
 # MAGIC
-# MAGIC <img src="./resources/build_06.png" alt="Assemble Agent" width="900"/>
+# MAGIC <img src="./resources/build_6.png" alt="Assemble Agent" width="900"/>
 
 # COMMAND ----------
 

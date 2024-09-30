@@ -1,11 +1,12 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Prepare Data
+# MAGIC #Prepare Data
+# MAGIC ###### Let us start by creating some synthetic data to work with.
+# MAGIC <img src="./resources/build_1.png" alt="Prepare Data" width="900" style="border:2px;"/>
 # MAGIC
-# MAGIC <img src="./resources/build_01.png" alt="Prepare Data" width="900"/>
 # MAGIC
 # MAGIC
-# MAGIC Let us create some synthetic data to work with. This notebook will create CATALOG and SCHEMA if it does not exist and create the below data tables.
+# MAGIC This notebook will create CATALOG and SCHEMA if it does not exist and create the below data tables.
 # MAGIC
 # MAGIC **member_enrolment**: Table containing member enrolment information like client and plan_id
 # MAGIC

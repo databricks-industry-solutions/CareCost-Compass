@@ -1,7 +1,9 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC ### Parsing and Chunking Summary of benefits
-# MAGIC <img src="./resources/build_02.png" alt="Parse and Chunk" width="900"/>
+# MAGIC # Parsing and Chunking Summary of benefits
+# MAGIC ######Next step of our building process is to build the the Summary of Benefit Parsing and implement an appropriate chunking strategy.
+# MAGIC <img src="./resources/build_2.png" alt="Parse and Chunk" width="900"/>
+# MAGIC
 
 # COMMAND ----------
 
