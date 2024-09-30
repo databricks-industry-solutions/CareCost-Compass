@@ -1,16 +1,13 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC ###Import the Tools and Libraries
+# MAGIC ###Assemble the Care Cost Compass Application
+# MAGIC We will assemble our compound gen ai application as a custom pyfunc model 
+# MAGIC
+# MAGIC <img src="./resources/build_06.png" alt="Assemble Agent" width="700"/>
 
 # COMMAND ----------
 
 # MAGIC %run "./05 a Create All Tools"
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ###Assemble the Care Cost Compass Application
-# MAGIC We will assemble our compound gen ai application as a custom pyfunc model 
 
 # COMMAND ----------
 

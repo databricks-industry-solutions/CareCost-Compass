@@ -1,6 +1,8 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC ###Configure Libraries
+# MAGIC ###Create All Tools
+# MAGIC
+# MAGIC <img src="./resources/build_05.png" alt="Create Tools" width="700"/>
 
 # COMMAND ----------
 

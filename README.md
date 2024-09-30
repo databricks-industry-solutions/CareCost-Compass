@@ -43,7 +43,14 @@ A typical workflow for a procedure cost estimation is as below
 
 In this project, we are attempting to create a Compound Gen AI application that perform these steps and derive the cost accurately. Many simplifying assumptions have been made in the sample data to keep the scope of this work limited to the design, development and deployment of the agentic application
 
-### Use in Databricks Workspace
+### Architecture
+<img src="./resources/architecture.png" alt="Architecture" width="700"/>
+
+### Build the Solution in Databricks Workspace
+The given notebooks will build all the application components step-by-step. The whole process looks like this
+
+<img src="./resources/build_full.png" alt="Full Build" width="700"/>``
+
 To run this demo in a Databricks Workspace, follow the below steps
 1. Use [Dabaricks Git Folders](https://docs.databricks.com/en/repos/index.html) and clone the repo into your workspace
 2. Create a `single-node` cluster for running the notebooks. This code is tested on a `DBR 14.3LTS ML` cluster. Add `scripts/init_script.sh` to the cluster by following this [documentation](https://docs.databricks.com/en/init-scripts/cluster-scoped.html). 

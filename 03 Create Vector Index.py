@@ -4,6 +4,10 @@
 # MAGIC Mosaic AI Vector Search is a vector database that is built into the Databricks Data Intelligence Platform and integrated with its governance and productivity tools. A vector database is a database that is optimized to store and retrieve embeddings. Embeddings are mathematical representations of the semantic content of data, typically text or image data. [Read More](https://docs.databricks.com/en/generative-ai/vector-search.html)
 # MAGIC
 # MAGIC ### Vector Indexes
+# MAGIC Let us start creating vector indexes
+# MAGIC
+# MAGIC <img src="./resources/build_03.png" alt="Vector Indexes" width="700"/>
+# MAGIC
 # MAGIC We will be creating two vector indexes for this project.
 # MAGIC 1. Vector Index for the parsed Summary of Benefits and Coverage chunks
 # MAGIC 2. Vector Index for CPT codes and descriptions
@@ -115,6 +119,12 @@ spark.sql(f"ALTER TABLE {cpt_source_data_table} SET TBLPROPERTIES (delta.enableC
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ######NOTE
+# MAGIC Below section creates a vector search index and does an initial sync. Some time this could take longer and the cell execution might timeout. You can re-run the cell to finish to completion
+
+# COMMAND ----------
+
 sbc_index = create_delta_sync_vector_search_index(
   vector_search_endpoint_name=vector_search_endpoint_name,
   index_name=sbc_vector_index_name,
@@ -129,6 +139,12 @@ sbc_index = create_delta_sync_vector_search_index(
 
 # MAGIC %md
 # MAGIC #####Create CPT Code Vector Index
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ######NOTE
+# MAGIC Below section creates a vector search index and does an initial sync. Some time this could take longer and the cell execution might timeout. You can re-run the cell to finish to completion
 
 # COMMAND ----------
 

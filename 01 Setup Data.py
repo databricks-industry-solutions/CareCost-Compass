@@ -1,6 +1,10 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Prepare Data
+# MAGIC
+# MAGIC <img src="./resources/build_01.png" alt="Prepare Data" width="700"/>
+# MAGIC
+# MAGIC
 # MAGIC Let us create some synthetic data to work with. This notebook will create CATALOG and SCHEMA if it does not exist and create the below data tables.
 # MAGIC
 # MAGIC **member_enrolment**: Table containing member enrolment information like client and plan_id
@@ -144,7 +148,7 @@ spark.sql(f"ALTER TABLE {catalog}.{schema}.{member_accumulators_table_name} ADD 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ###### Inspect and Verify `Data`
+# MAGIC ###### Inspect and Verify Data
 
 # COMMAND ----------
 
@@ -196,7 +200,7 @@ spark.sql(f"ALTER TABLE {catalog}.{schema}.{cpt_code_table_name} ADD CONSTRAINT 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ###### Inspect and Verify `Data`
+# MAGIC ###### Inspect and Verify Data
 
 # COMMAND ----------
 
@@ -238,7 +242,7 @@ spark.sql(f"ALTER TABLE {catalog}.{schema}.{procedure_cost_table_name} ADD CONST
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ###### Inspect and Verify `Data`
+# MAGIC ###### Inspect and Verify Data
 
 # COMMAND ----------
 

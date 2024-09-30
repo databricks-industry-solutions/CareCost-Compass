@@ -1,5 +1,11 @@
 # Databricks notebook source
 # MAGIC %md
+# MAGIC ### Parsing and Chunking Summary of benefits
+# MAGIC <img src="./resources/build_02.png" alt="Parse and Chunk" width="700"/>
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ###Chunking Strategy
 # MAGIC
 # MAGIC In this notebook we will try to ingest the Coverage Summary documents in PDF format. This example makes the assumption that the coverage summary document is in the below format.
@@ -121,11 +127,9 @@ def get_coverage(pdf_name : str, summary_page = True) -> pd.DataFrame :
 
 #lets test our methods
 pdf_name = f"{sbc_folder_path}/SBC_client1.pdf"
-
 display(get_summary(pdf_name))
 
 # COMMAND ----------
-
 
 display(get_coverage(pdf_name))
 

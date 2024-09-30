@@ -288,3 +288,7 @@ def build_api_chain(model_endpoint_name, prompt_template, qa_chain=False, max_to
       raise Exception(f"Endpoint {model_endpoint_name} not available ")
   
 
+
+# COMMAND ----------
+
+
