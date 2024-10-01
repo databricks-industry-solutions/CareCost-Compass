@@ -56,10 +56,6 @@
 
 # COMMAND ----------
 
-dbutils.library.restartPython()
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC #####Install other libraries and import utility methods
 
