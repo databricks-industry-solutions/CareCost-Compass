@@ -18,6 +18,13 @@
 # MAGIC
 # MAGIC In addition to these tables, this notebook creates a Unity Catalog Volume and store the Summary of Benefit PDF files and CPT Code CSV files in appropriate folders
 # MAGIC
+# MAGIC We are using synthetic data as example. In reality robust Data Ingestion Pipelines will be used to manage this data in a Lakehouse.
+# MAGIC
+# MAGIC #####Read More:
+# MAGIC * [Databricks Volumes](https://docs.databricks.com/en/sql/language-manual/sql-ref-volumes.html)
+# MAGIC * [Ingest Data into Databricks Lakehouse](https://docs.databricks.com/en/ingestion/index.html)
+# MAGIC * [Data Pipelines in Databricks](https://docs.databricks.com/en/getting-started/data-pipeline-get-started.html)
+# MAGIC
 
 # COMMAND ----------
 
@@ -26,7 +33,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ####Create Catalog
+# MAGIC ####Create Catalog and Schema
 
 # COMMAND ----------
 
@@ -248,7 +255,3 @@ spark.sql(f"ALTER TABLE {catalog}.{schema}.{procedure_cost_table_name} ADD CONST
 # COMMAND ----------
 
 display(spark.table(f"{catalog}.{schema}.{procedure_cost_table_name}"))
-
-# COMMAND ----------
-
-

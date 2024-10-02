@@ -53,7 +53,7 @@ class CareCostCompassAgent(PythonModel):
     #below variables are so that we can use it for review app
     self.environment = model_config["environment"]
     self.default_parameter_json_string = model_config["default_parameter_json_string"]
-
+    
     self.question_classifier_model_endpoint_name = model_config["question_classifier_model_endpoint_name"]
     self.benefit_retriever_model_endpoint_name = model_config["benefit_retriever_model_endpoint_name"]
     self.benefit_retriever_config = RetrieverConfig(**model_config["benefit_retriever_config"])
@@ -238,7 +238,7 @@ def get_model_config(db_host_url:str,
                        benefit_retriever_model_endpoint_name:str,
                        summarizer_model_endpoint_name:str,
 
-                       default_parameter_json_string:str):
+                       default_parameter_json_string:str) -> dict:
     
     fq_member_table_name = f"{catalog}.{schema}.{member_table_name}"
     fq_procedure_cost_table_name = f"{catalog}.{schema}.{procedure_cost_table_name}"
@@ -547,6 +547,7 @@ print(f"Latest model version is {latest_model_version}")
 # COMMAND ----------
 
 from databricks.agents import deploy
+agents.set_review_instructions(registered_model_name, "Thank you for testing Care Cost Compass agent. Ask an appropriate question and use your domain expertise to evaluate and give feedback on the agent's responses.")
 
 deployment = deploy(registered_model_name, latest_model_version, scale_to_zero=True,)
 
