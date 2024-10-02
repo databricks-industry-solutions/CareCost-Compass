@@ -1,9 +1,34 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC ###Assemble the Care Cost Compass Application
-# MAGIC We will assemble our compound gen ai application as a custom pyfunc model 
+# MAGIC #Assemble the Care Cost Compass Application
 # MAGIC
+# MAGIC ####Now it's time to assemble all the components that we have built so far and build the Agent. 
 # MAGIC <img src="./resources/build_6.png" alt="Assemble Agent" width="900"/>
+# MAGIC
+# MAGIC Since we made our components as LangChain Tools, we can use an AgentExecutor to run the process. 
+# MAGIC
+# MAGIC But since its a very straight forward process, for the sake of reducing latency of response and to improve accuracy, we can use a custom PyFunc model to build our Agent application and deploy it on Databricks Model Serving.
+# MAGIC
+# MAGIC ####MLFlow Python Function
+# MAGIC MLflow’s Python function, pyfunc, provides flexibility to deploy any piece of Python code or any Python model. The following are example scenarios where you might want to use the guide.
+# MAGIC
+# MAGIC * Your model requires preprocessing before inputs can be passed to the model’s predict function.
+# MAGIC * Your model framework is not natively supported by MLflow.
+# MAGIC * Your application requires the model’s raw outputs to be post-processed for consumption.
+# MAGIC * The model itself has per-request branching logic.
+# MAGIC * You are looking to deploy fully custom code as a model.
+# MAGIC
+# MAGIC [Read More](https://docs.databricks.com/en/machine-learning/model-serving/deploy-custom-models.html)
+# MAGIC
+# MAGIC
+# MAGIC
+# MAGIC
+# MAGIC
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ###Load Tools
 
 # COMMAND ----------
 
@@ -11,10 +36,37 @@
 
 # COMMAND ----------
 
+#a utility function to use logging api instead of print
 import logging
 def log_print(msg):
     logging.warning(f"=====> {msg}")
 
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ###Build Agent
+# MAGIC ####CareCostCompassAgent
+# MAGIC `CareCostCompassAgent` is our Python Function that will implement the logic necessary for our Agent.
+# MAGIC
+# MAGIC There are two required functions that we need to implement:
+# MAGIC
+# MAGIC `load_context` - anything that needs to be loaded just one time for the model to operate should be defined in this function. This is critical so that the system minimize the number of artifacts loaded during the predict function, which speeds up inference.
+# MAGIC We will be instantiating all the tools in this method
+# MAGIC
+# MAGIC `predict` - this function houses all the logic that is run every time an input request is made. We will implement the application logic here.
+# MAGIC
+# MAGIC ####Model Input and Output
+# MAGIC Our model is being built as Chat Agent and that dictates the model signature that we are going to use. 
+# MAGIC
+# MAGIC The `data` input to a pyfunc model can be a Pandas DataFrame , Pandas Series , Numpy Array, List or a Dictionary. For our implementation we will be expecting a Pandas DataFrame as input. Since its a Chat agent, it will be having the schema of `mlflow.models.rag_signatures.Message`.
+# MAGIC
+# MAGIC Our response will be just a `mlflow.models.rag_signatures.StringMessage` 
+# MAGIC
+# MAGIC ####Workflow
+# MAGIC We will implement the below workflow in the `predict` method of pyfunc model.
+# MAGIC
+# MAGIC <img src="./resources/logic_workflow.png" width="700">
 
 # COMMAND ----------
 
@@ -25,12 +77,16 @@ from dataclasses import asdict
 from mlflow.pyfunc import PythonModel, PythonModelContext
 from mlflow.models.rag_signatures import (
     ChatCompletionRequest,
-    ChainCompletionChoice,
-    ChatCompletionResponse, Message,
+    ChatCompletionResponse, 
+    Message,
     StringResponse
 )
+import asyncio
 
 class CareCostCompassAgent(PythonModel):
+  """Agent that can answer questions about medical procedure cost."""
+
+  #lets define the categories for our question classifier
   invalid_question_category = {
     "PROFANITY": "Content has inappropriate language",
     "RACIAL": "Content has racial slur.",
@@ -80,7 +136,64 @@ class CareCostCompassAgent(PythonModel):
     self.member_cost_calculator = MemberCostCalculator()
 
     self.summarizer = ResponseSummarizer(model_endpoint_name=self.summarizer_model_endpoint_name)  
+  
+  #we will create three flows that can run parallely
+  async def __benefit_flow(self, member_id:str, question:str) -> Benefit:
+      ##########################################
+      ####Get client id
+      log_print("Getting client id:")
+      client_id = await self.client_id_lookup.arun({"member_id": member_id})
+      if client_id is None:
+        raise Exception("Member not found")
+
+      ##########################################
+      ####Get Coverage details
+      log_print("Getting Coverage details:")
+      benefit_json = await self.benefit_rag.arun({"client_id":client_id,"question":question})
+      benefit = Benefit.model_validate_json(benefit_json)
+      log_print("Coverage details:")
+      log_print(benefit_json)
+      return benefit
+    
+  async def __procedure_flow(self, question:str) -> float:
+      ##########################################
+      ####Get procedure code and description
+      proc_code, proc_description = await self.procedure_code_retriever.arun({"question":question})
+      log_print("Procedure")
+      log_print(f"{proc_code}:{proc_description}")
       
+      ##########################################
+      ####Get procedure cost
+      proc_cost = await self.procedure_cost_lookup.arun({"procedure_code":proc_code})
+      if proc_cost is None:
+        raise Exception(f"Procedure code {proc_code} not found")
+      else:
+        log_print(f"Procedure Cost: {proc_cost}")
+      
+      return proc_cost
+
+  async def __member_accumulator_flow(self, member_id:str) -> dict:
+      ##########################################
+      ####Get member deductibles"
+      member_deductibles = await self.member_accumulator_lookup.arun({"member_id":member_id})
+      if member_deductibles is None:
+        raise Exception("Member not found")
+      else:
+        log_print("Member deductibles")
+        log_print(member_deductibles)
+      
+      return member_deductibles
+
+  async def __async_run(self, member_id, question) -> []:
+      """Runs the three flows in parallel"""
+      tasks = [
+        asyncio.create_task(self.__benefit_flow(member_id, question)),
+        asyncio.create_task(self.__procedure_flow(question)),
+        asyncio.create_task(self.__member_accumulator_flow(member_id))
+      ]      
+      return await asyncio.gather(*tasks)
+      
+
   @mlflow.trace(name="predict", span_type="func")
   def predict(self, context:PythonModelContext, model_input: pd.DataFrame, params:dict) -> StringResponse:
     """
@@ -92,14 +205,13 @@ class CareCostCompassAgent(PythonModel):
         params: Question and member id
 
     Returns:
-        pandas.DataFrame containing predictions with the following schema:
-            Predicted answer: string
+        Predicted answer: string
     """
     try:
 
       log_print("Inside predict")
       ##########################################
-      ####Format all types of input data to list
+      ####Get rows of dataframe as list of messages
       if isinstance(model_input, pd.DataFrame):
           model_input = model_input.to_dict(orient="records")
       else:
@@ -108,6 +220,7 @@ class CareCostCompassAgent(PythonModel):
       
       ##########################################
       ####Get member id and question
+
       messages = model_input[0]["messages"]
       
       member_id_sentence = None
@@ -115,6 +228,12 @@ class CareCostCompassAgent(PythonModel):
       
       for message in messages:
         if self.environment in ["dev", "test"]:
+          ##This workaround is for making our agent work with review app
+          ##This is required only because we need two messages in the request
+          ##one for member id and other for question
+          ##Currently review app does not support multiple messages in the request
+
+          #In non production env, we will use a hardcoded member id
           #dev/test
           parameters = json.loads(self.default_parameter_json_string)
         else:
@@ -149,43 +268,14 @@ class CareCostCompassAgent(PythonModel):
       else:
         log_print(f"Member id: {member_id}")
 
-      ##########################################
-      ####Get client id
-      log_print("Getting client id:")
-      client_id = self.client_id_lookup.get_client_id(member_id)
-      if client_id is None:
-        raise Exception("Member not found")
+      ############################################
+      #### Run the flows, namely benefit, procedure, member_accumulator parallely
 
-      ##########################################
-      ####Get Coverage details
-      log_print("Getting Coverage details:")
-      benefit_json = self.benefit_rag.get_benefits(client_id=client_id,question=question)
-      benefit = Benefit.model_validate_json(benefit_json)
-      log_print("Coverage details:")
-      log_print(benefit_json)
+      async_results = asyncio.run(self.__async_run(member_id, question))
 
-      ##########################################
-      ####Get procedure code and description
-      proc_code, proc_description = self.procedure_code_retriever.get_procedure_details(question=question)
-      log_print("Procedure")
-      log_print(f"{proc_code}:{proc_description}")
-      
-      ##########################################
-      ####Get procedure cost
-      proc_cost = self.procedure_cost_lookup.get_procedure_cost(procedure_code=proc_code)
-      if proc_cost is None:
-        raise Exception(f"Procedure code {proc_code} not found")
-      else:
-        log_print(f"Procedure Cost: {proc_cost}")
-
-      ##########################################
-      ####Get member deductibles"
-      member_deductibles = self.member_accumulator_lookup.get_member_accumulators(member_id=member_id)
-      if member_deductibles is None:
-        raise Exception("Member not found")
-      else:
-        log_print("Member deductibles")
-        log_print(member_deductibles)
+      benefit = async_results[0]
+      proc_cost = async_results[1]
+      member_deductibles = async_results[2]
 
       ##########################################
       ####Calculate member out of pocket cost
@@ -272,6 +362,8 @@ def get_model_config(db_host_url:str,
 
 # COMMAND ----------
 
+import nest_asyncio
+nest_asyncio.apply()
 
 vector_search_endpoint_name="care_cost_vs_endpoint"
 
@@ -335,6 +427,15 @@ display_results(model_output_bad["content"])
 
 # MAGIC %md
 # MAGIC ### Model Evaluation
+# MAGIC Now we know that our model is working, let us evaluate the Agent as a whole against our initial evaluation dataframe.
+# MAGIC
+# MAGIC In the next notebook, we will see how to use the review app to collect more reviews and reconstruct our evaluation dataframe so that we have better benchmark for evaluating the model as we iterate
+# MAGIC
+# MAGIC We will follow the Databricks recommended [Evaluation Driven Development](https://docs.databricks.com/en/generative-ai/tutorials/ai-cookbook/evaluation-driven-development.html) workflow. Having a quick PoC agent ready, we will 
+# MAGIC * Benchmark by running an evaluation
+# MAGIC * Deploy the agent application
+# MAGIC * Collect staje-holder feedback 
+# MAGIC * Iteratively improve model quality with the data from feedback
 
 # COMMAND ----------
 
@@ -537,10 +638,11 @@ print(f"Latest model version is {latest_model_version}")
 
 # COMMAND ----------
 
-from databricks.agents import deploy
+from databricks import agents
+
 agents.set_review_instructions(registered_model_name, "Thank you for testing Care Cost Compass agent. Ask an appropriate question and use your domain expertise to evaluate and give feedback on the agent's responses.")
 
-deployment = deploy(registered_model_name, latest_model_version, scale_to_zero=True,)
+deployment = agents.deploy(registered_model_name, latest_model_version, scale_to_zero=True,)
 
 # COMMAND ----------
 

@@ -1,5 +1,10 @@
 # Databricks notebook source
 # MAGIC %md
+# MAGIC #Create Vector Indexes
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ###Mosaic AI Vector Search and Vector Indexes
 # MAGIC Mosaic AI Vector Search is a vector database that is built into the Databricks Data Intelligence Platform and integrated with its governance and productivity tools. A vector database is a database that is optimized to store and retrieve embeddings. Embeddings are mathematical representations of the semantic content of data, typically text or image data. [Read More](https://docs.databricks.com/en/generative-ai/vector-search.html)
 # MAGIC

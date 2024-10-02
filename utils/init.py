@@ -1,14 +1,5 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC #### Install required libraries
-
-# COMMAND ----------
-
-dbutils.library.restartPython()
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ##### Define variables and utility functions
 
 # COMMAND ----------

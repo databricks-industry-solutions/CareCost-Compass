@@ -1,6 +1,26 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC ###Create All Tools
+# MAGIC #Create All Tools
+# MAGIC Tools are interfaces that an agent, chain, or LLM can use to interact with the world. [Read More](https://python.langchain.com/v0.1/docs/modules/tools/)
+# MAGIC
+# MAGIC ###Identify Tools
+# MAGIC
+# MAGIC While constructing Agents, we might be leveraging many functions to perform specific actions. In our application we have the below functions that we need to implement
+# MAGIC * Retrieve `member_id` from context
+# MAGIC * Classifier to categorize the question
+# MAGIC * A lookup function to get `client_id` from `member_id` from member enrolment table
+# MAGIC * A RAG module to lookup Benefit from Summary of Benefits index for the `client_id`
+# MAGIC * A semantic search module to lookup appropriate procedure code for the question
+# MAGIC * A lookup function to get procedure cost for the retrieved `procedure_code` from procedure cost table
+# MAGIC * A lookup function to get member accumulators for the `member_id` from member accumulators table
+# MAGIC * A pythom function to calculate out of pocket cost given the information from the previous steps
+# MAGIC * A summarizer to summarize the calculation in a professional manner ans send it to the user
+# MAGIC
+# MAGIC While develpoing Agentic Applications, thse functions will be developed as **Tools ** so that the Agent Executor can use them to process the user request. 
+# MAGIC
+# MAGIC In this notebook we will develop thse functions as LangChain [tools](https://python.langchain.com/v0.1/docs/modules/tools/), so that we can potentially use these tools in a LangChain agent.
+# MAGIC
+# MAGIC **NOTE:** In a real enterprise application many of these tools could be complex functions or REST api calls to other services. The scope of this notebook is to illustrate the feature and can be extended any way possible.
 # MAGIC
 # MAGIC <img src="./resources/build_5.png" alt="Create Tools" width="900" />
 
@@ -30,6 +50,11 @@ from databricks.vector_search.index import VectorSearchIndex
 
 from langchain_core.documents.base import Document
 from langchain.output_parsers import PydanticOutputParser
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #### Let us create some helper classes 
 
 # COMMAND ----------
 
@@ -87,13 +112,19 @@ class RetrieverConfig(BaseModel):
 # MAGIC %md
 # MAGIC ###Add Member Id Retriever
 # MAGIC
+# MAGIC The function of `MemberIdRetriever` is to retrieve the value of `member_id` from the chat messages input to the model.
+# MAGIC
+# MAGIC We can easily implement this using a simple Zero Shot prompt
+# MAGIC
 
 # COMMAND ----------
 
 class MemberIdRetrieverInput(BaseModel):
+    """Data class for tool input"""
     question: str = Field(description="Sentence containing member_id")
 
 class  MemberIdRetriever(BaseTool):
+    """A tool to extract member id from question"""
     name : str = " MemberIdRetriever"
     description : str = "useful for extracting member id from question"
     args_schema : Type[BaseModel] = MemberIdRetrieverInput
@@ -115,17 +146,20 @@ class  MemberIdRetriever(BaseTool):
         return category.strip()
     
     def _run(self, question:str, run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
+        """Run the tool"""
         return self.get_member_id(question)
     
-    def _arun(self, question:str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> str:
+    async def _arun(self, question:str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> str:
+        """Run the tool asynchronously"""
         return self.get_member_id(question)
 
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ###Adding Content Filter
-# MAGIC We will create the content filter component as a Natural Language Classfier
+# MAGIC ###Adding Question Classifier
+# MAGIC
+# MAGIC The `QuestionClassifier` acts as a content filter that checks if the question from user is appropriate and relevant. We will create the content filter component as a Natural Language Classfier using simple Zero Shot prompt.
 # MAGIC
 
 # COMMAND ----------
@@ -133,9 +167,11 @@ class  MemberIdRetriever(BaseTool):
 
 
 class QuestionClassifierInput(BaseModel):
+    """Data class for tool input"""
     questions: List[str] = Field(description="Question to be classified")
 
 class QuestionClassifier(BaseTool):
+    """A tool to classify questions into categories"""
     name : str = "QuestionClassifier"
     description : str = "useful for classifying questions into categories"
     args_schema : Type[BaseModel] = QuestionClassifierInput
@@ -162,9 +198,11 @@ class QuestionClassifier(BaseTool):
         return category.strip()
     
     def _run(self, questions:[str], run_manager: Optional[CallbackManagerForToolRun] = None) -> [str]:
+        """Run the tool"""
         return [self.get_question_category(question) for question in questions]
     
-    def _arun(self, questions:[str], run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> [str]:
+    async def _arun(self, questions:[str], run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> [str]:
+        """Run the tool asynchronously"""
         return [self.get_question_category(question) for question in questions]
     
 
@@ -172,10 +210,17 @@ class QuestionClassifier(BaseTool):
 
 # MAGIC %md
 # MAGIC ###Adding Benefit RAG
+# MAGIC
+# MAGIC The function of `BenefitsRetriever` is to 
+# MAGIC * Retrieve the appropriate Benefit clause from Summary of Benefits Index 
+# MAGIC * Parse the clause, retrieve in-network and out-of-network benefits and convert into a structured dataclass object
+# MAGIC
+# MAGIC We will implement this as a RAG application with Zero Shot prompting
 
 # COMMAND ----------
 
 class BenefitsRetriever():    
+    """A retriever class to do Vector Index Search"""
     retriever_config: RetrieverConfig = None
     vector_index: VectorSearchIndex = None
 
@@ -200,10 +245,12 @@ class BenefitsRetriever():
 
 
 class BenefitsRAGInput(BaseModel):
+    """Data class for tool input"""
     client_id : str = Field(description="Client ID for which the benefits need to be retrieved")
     question: str = Field(description="Question for which the benefits need to be retrieved")
 
 class Benefit(BaseModel):
+    """Data class for tool output"""
     text:str = Field(description="Full text as provided in the context as-is without changing anything")
     in_network_copay:float = Field(description="In Network copay amount. Set to -1 if not covered or has coinsurance")
     in_network_coinsurance:float= Field(description="In Network coinsurance amount without the % sign. Set to -1 if not covered or has copay")
@@ -211,6 +258,7 @@ class Benefit(BaseModel):
     out_network_coinsurance:float = Field(description="Out of Network coinsurance amount without the % sign. Set to -1 if not covered or has copay")
     
 class BenefitsRAG(BaseTool):
+    """Tool class implementing the benefits retriever"""
     name : str = "BenefitsRAG"
     description : str = "useful for retrieving benefits from a vector search index in json format"
     args_schema : Type[BaseModel] = BenefitsRAGInput
@@ -255,23 +303,29 @@ class BenefitsRAG(BaseTool):
             raise Exception("No coverage found")
 
     def _run(self, client_id:str, question:str,run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
+        """Run the tool"""
         return self.get_benefits(client_id, question)
     
-    def _arun(self, client_id:str, question:str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> str:
+    async def _arun(self, client_id:str, question:str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> str:
+        """Run the tool asynchronously"""
         return self.get_benefits(client_id, question)
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ###Adding Procedure Retriever
+# MAGIC
+# MAGIC `ProcedureRetriever` tool will be used to retrieve procedure code that corresponds to the question. It's implemented as simple seamntic search using vector search api
 
 # COMMAND ----------
 
 class ProcedureRetrieverInput(BaseModel):
+    """Data class for tool input"""
     question: str = Field(description="Question for which the procedure need to be retrieved")
 
 #Expects DATABRICKS_TOKEN and DATABRICKS_HOST env vars
-class ProcedureRetriever(BaseTool):    
+class ProcedureRetriever(BaseTool):
+    """A retriever class to do Vector Index Search"""
     name : str = "ProcedureRetriever"
     description : str = "useful for retrieving an appropriate procedure code for the given question"
     args_schema : Type[BaseModel] = ProcedureRetrieverInput
@@ -302,22 +356,28 @@ class ProcedureRetriever(BaseTool):
             raise Exception("No procedure found.")
                             
     def _run(self, question:str,run_manager: Optional[CallbackManagerForToolRun] = None) -> (str,str):
+        """Run the tool"""
         return self.get_procedure_details(question)
     
-    def _arun(self, question:str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> (str,str):
+    async def _arun(self, question:str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> (str,str):
+        """Run the tool asynchronously"""
         return self.get_procedure_details(question)
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ###Adding Client Id Lookup
+# MAGIC
+# MAGIC `ClientIdLookup` tool will provide an Online Table look up to retrieve `client_id` for a given `member_id`. We will implment this using a feature lookup on the `member_enrolment` Online Table
 
 # COMMAND ----------
 
 class ClientIdLookupInput(BaseModel):
+    """Data class for tool input"""
     member_id: str = Field(description="Member ID using which we need to lookup client id")
 
 class ClientIdLookup(BaseTool):    
+    """A class to do online table lookup to retrieve client_id gievn member_id"""
     name : str = "ClientIdLookup"
     description : str = "useful for retrieving a client id given a member id"
     args_schema : Type[BaseModel] = ClientIdLookupInput
@@ -334,22 +394,30 @@ class ClientIdLookup(BaseTool):
         return member_data["outputs"][0]["client_id"]
 
     def _run(self, member_id:str,run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
+        """Run the tool"""
         return self.get_client_id(member_id)
     
-    def _arun(self, member_id:str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> str:
+    async def _arun(self, member_id:str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> str:
+        """Run the tool asynchronously"""
         return self.get_client_id(member_id)
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ###Adding Procedure Cost Lookup
+# MAGIC
+# MAGIC Next we will implement a function to retrieve the negotiated Procedure Cost given a procedure code. 
+# MAGIC
+# MAGIC This function is a very simplistic implementation of something that can be quite complex and requires properly constructed data engineering pipelines. In this example we have made an assumption that the aggregation of the procedure cost from various providers are already completed and is available in a delta table.
 
 # COMMAND ----------
 
 class ProcedureCostLookupInput(BaseModel):
+    """Data class for tool input"""
     procedure_code: str = Field(description="Procedure Code for which to find the cost")
 
 class ProcedureCostLookup(BaseTool):    
+    """A class to do online table lookup to retrieve procedure cost given procedure code"""
     name : str = "ProcedureCostLookup"
     description : str = "useful for retrieving the cost of a procedure given the procedure code"
     args_schema : Type[BaseModel] = ProcedureCostLookupInput
@@ -365,33 +433,29 @@ class ProcedureCostLookup(BaseTool):
         return procedure_cost_data["outputs"][0]["cost"]
 
     def _run(self, procedure_code:str,run_manager: Optional[CallbackManagerForToolRun] = None) -> float:
+        """Run the tool"""
         return self.get_procedure_cost(procedure_code)
     
-    def _arun(self, procedure_code:str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> float:
+    async def _arun(self, procedure_code:str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> float:
+        """Run the tool asynchronously"""
         return self.get_procedure_cost(procedure_code)
-
-# COMMAND ----------
-
-rr = pd.DataFrame( {
-    "messages" : [
-        {"content":"Member id is 1234.","role":"user" },
-        {"content":"an mri of shoulder is needed. How much will it cost me?","role":"user" }
-        ]
-})
-
-rr.to_dict(orient="records")
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ###Adding Member Accumulators Lookup
+# MAGIC
+# MAGIC Next important function that we need to implement is a lookup to retrieve the member accumulators like deductibles and YTD out of pocket costs. In this example we are implementing it as a simple table lookup with member_id but usually the implementation could be different, for eg: could be a call to a micro service api
+# MAGIC
 
 # COMMAND ----------
 
 class MemberAccumulatorsLookupInput(BaseModel):
+    """Data class for tool input"""
     member_id: str = Field(description="Member Id for which we need to lookup the accumulators")
 
 class MemberAccumulatorsLookup(BaseTool):    
+    """A class to do online table lookup to retrieve member accumulators given member id"""
     name : str = "MemberAccumulatorsLookup"
     description : str = "useful for retrieving the accumulators like deductibles given a member id"
     args_schema : Type[BaseModel] = MemberAccumulatorsLookupInput
@@ -407,9 +471,11 @@ class MemberAccumulatorsLookup(BaseTool):
         return accumulator_data["outputs"][0]
 
     def _run(self, member_id:str,run_manager: Optional[CallbackManagerForToolRun] = None) -> dict[str, Union[float,str] ]:
+        """Run the tool"""
         return self.get_member_accumulators(member_id)
     
-    def _arun(self, member_id:str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> dict[str, Union[float,str] ]:
+    async def _arun(self, member_id:str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> dict[str, Union[float,str] ]:
+        """Run the tool asynchronously"""
         return self.get_member_accumulators(member_id)
 
 # COMMAND ----------
@@ -417,22 +483,27 @@ class MemberAccumulatorsLookup(BaseTool):
 # MAGIC %md
 # MAGIC ###Adding Cost Calculator
 # MAGIC Cost Calculator is a deterministic method that takes member benefits, deductibles and procedure cost to calculate the out of pocket cost that member could be paying for the procedure
+# MAGIC
+# MAGIC This is again a very simplistic implementation of a calculation which could be much complex in reality. As mentioned before, the idea is to illustrate patterns that can be easily extended as needed
 
 # COMMAND ----------
 
 class MemberCost(BaseModel):
-    in_network_cost : float = Field(description="In-Network cost of the procedure")
-    out_network_cost : float = Field(description="Out-Network cost of the procedure")
-    notes : List[str] = Field(description="Notes about the cost calculation")
+  """Data class for member cost which will be the model output"""
+  in_network_cost : float = Field(description="In-Network cost of the procedure")
+  out_network_cost : float = Field(description="Out-Network cost of the procedure")
+  notes : List[str] = Field(description="Notes about the cost calculation")
 
 
 class MemberCostCalculatorInput(BaseModel):
-    benefit:Benefit = Field(description="Benefit object for the member")
-    procedure_cost:float = Field(description="Cost of the procedure")
-    member_deductibles:dict[str, Union[float,str] ] = Field(description="Accumulators for the member")
+  """Data class for tool input"""
+  benefit:Benefit = Field(description="Benefit object for the member")
+  procedure_cost:float = Field(description="Cost of the procedure")
+  member_deductibles:dict[str, Union[float,str] ] = Field(description="Accumulators for the member")
 
 
 class MemberCostCalculator(BaseTool):
+    """A class to calculate the member out of pocket cost given the benefits, procedure cost and deductibles"""
     name : str = "MemberCostCalculator"
     description : str = "calculates the estimated member out of pocket cost given the benefits, procedure cost and deductibles"
     args_schema : Type[BaseModel] = MemberCostCalculatorInput
@@ -503,19 +574,24 @@ class MemberCostCalculator(BaseTool):
              procedure_cost:float,
              member_deductibles:dict[str, Union[float,str] ],
              run_manager: Optional[CallbackManagerForToolRun] = None) -> MemberCost:
+        """Run the tool"""
         return self.get_member_out_of_pocket_cost(benefit,procedure_cost,member_deductibles)
     
-    def _run(self,
+    async def _arun(self,
              benefit:Benefit,
              procedure_cost:float,
              member_deductibles:dict[str, Union[float,str] ],
              run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> MemberCost:
+        """Run the tool asynchronously"""
         return self.get_member_out_of_pocket_cost(benefit,procedure_cost,member_deductibles)
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### Adding Summarizer
+# MAGIC
+# MAGIC `ResponseSummarizer` will take the calculation notes produced by the cost calculator tool and summarize it as response to the user.
+# MAGIC It is implemented using simple Zero Shot prompt
 
 # COMMAND ----------
 
@@ -545,5 +621,9 @@ class ResponseSummarizer(BaseTool):
     def _run(self, notes:List[str], run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
         return self.summarize(notes)
     
-    def _arun(self, notes:List[str], run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> str:
+    async def _arun(self, notes:List[str], run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> str:
         return self.summarize(notes)
+
+# COMMAND ----------
+
+

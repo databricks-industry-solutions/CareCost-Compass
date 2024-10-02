@@ -1,5 +1,17 @@
 # Databricks notebook source
 # MAGIC %md
+# MAGIC #Evaluating Tools
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ###Importance of Evaluating Individual Tools
+# MAGIC An Agentic application is built using multiple components (tools in our case) that work together. The quality of the response from Agent is highly dependent on how the individual components (tools) perform. There are multiple parameters that affects the performance of each of these tools like the model being used, temperature, max_tokens etc. that need to be tweaked individually for each tools to get best quality in the response. 
+# MAGIC
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ###Configure Libraries
 
 # COMMAND ----------
@@ -10,18 +22,21 @@
 
 # MAGIC %md
 # MAGIC ### Lets evaluate all the tools we built to select appropriate parameters
+# MAGIC
+# MAGIC **NOTE:** For the sake of simplicity, we are performing full evaluation only on few tools. But we can extend the same concept to all the tools being used.
 
 # COMMAND ----------
 
 #create a master run to hold all evaluation runs
 experiment = set_mlflow_experiment(experiment_tag)
-mlflow.start_run(experiment_id=experiment.experiment_id,
+master_run_info = mlflow.start_run(experiment_id=experiment.experiment_id,
                               run_name=f"01_tool_evaluation_runs")
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ####Test Member Id Retriever
+# MAGIC Since this is a very simple tool that uses a small model endpoint with a straight forward goal, we will not be doing a full evaluation. We will just run some unit tests.
 
 # COMMAND ----------
 
@@ -32,6 +47,11 @@ mi.get_member_id("Member id is:1234.")
 
 # MAGIC %md
 # MAGIC ####Test and Evaluate QuestionClassifier
+# MAGIC
+# MAGIC `QuestionClassifier` is implemented using a simple Zero Shot prompt on an LLM. 
+# MAGIC We will create an evaluation dataframe with `input_text` and `expected_response` and use MLFlow Evaluate to asses how the response matches to the expected response. This can be achieved using the `exact_match/v1` metric available in the open-source MLflow LLM evaluation functionality. [Read More](https://docs.databricks.com/en/mlflow/llm-evaluate.html)
+# MAGIC
+# MAGIC We will evaluate the model against two different model endpoints. 
 
 # COMMAND ----------
 
@@ -117,7 +137,9 @@ print(f"View the run at: https://{db_host_name}/ml/experiments/{best_result['exp
 
 # MAGIC %md
 # MAGIC ### Test and Evaluate BenefitRAG
+# MAGIC `BenefitsRAG` tool is a full RAG application that has many moving parts. Read more about evaluating RAG applications [here](https://docs.databricks.com/en/generative-ai/tutorials/ai-cookbook/fundamentals-evaluation-monitoring-rag.html)
 # MAGIC
+# MAGIC In our example, we will use [Mosaic AI Agent Evaluation](https://docs.databricks.com/en/generative-ai/agent-evaluation/index.html). Mosaic AI Agent Evaluation includes proprietary LLM judges and agent metrics to evaluate retrieval and request quality as well as overall performance metrics like latency and token cost.
 
 # COMMAND ----------
 
@@ -225,6 +247,10 @@ with mlflow.start_run(experiment_id=experiment.experiment_id,
 
 # MAGIC %md
 # MAGIC ### Test and Evaluate Procedure Retriever
+# MAGIC
+# MAGIC As mentioned before, for sake of simplicity, we will not be doing full evaluation of below tools. We will just unit test the remaining tools. 
+# MAGIC
+# MAGIC The techniques applied before can be easily implemented for these tools too.
 
 # COMMAND ----------
 
@@ -243,6 +269,10 @@ pr.run({"question": "What is the procedure code for hip replacement?"})
 
 # MAGIC %md
 # MAGIC ### Test and Evaluate Client Id Lookup
+# MAGIC
+# MAGIC As mentioned before, for sake of simplicity, we will not be doing full evaluation of below tools. We will just unit test the remaining tools. 
+# MAGIC
+# MAGIC The techniques applied before can be easily implemented for these tools too.
 
 # COMMAND ----------
 
@@ -253,6 +283,10 @@ cid_lkup.run({"member_id": "1234"})
 
 # MAGIC %md
 # MAGIC ### Test and Evaluate Procedure Cost Lookup
+# MAGIC
+# MAGIC As mentioned before, for sake of simplicity, we will not be doing full evaluation of below tools. We will just unit test the remaining tools. 
+# MAGIC
+# MAGIC The techniques applied before can be easily implemented for these tools too.
 
 # COMMAND ----------
 
@@ -263,6 +297,10 @@ pc_lkup.run({"procedure_code": "23920"})
 
 # MAGIC %md
 # MAGIC ### Test and Evaluate Member Accumulators Lookup
+# MAGIC
+# MAGIC As mentioned before, for sake of simplicity, we will not be doing full evaluation of below tools. We will just unit test the remaining tools. 
+# MAGIC
+# MAGIC The techniques applied before can be easily implemented for these tools too.
 
 # COMMAND ----------
 
@@ -273,6 +311,9 @@ accum_lkup.run({"member_id": "1234"})
 
 # MAGIC %md
 # MAGIC ### Test and Evaluate Member Cost Calculator
+# MAGIC
+# MAGIC Since this tool is just a simple python function, there is no need to evaluate this. We only need to run unit tests to test the accuracy of the calculations.
+# MAGIC Again, we are skipping that exercise here.
 
 # COMMAND ----------
 
@@ -306,6 +347,10 @@ mcc.run({"benefit":benefit,
 
 # MAGIC %md
 # MAGIC ### Test the Summarizer
+# MAGIC
+# MAGIC As mentioned before, for sake of simplicity, we will not be doing full evaluation of below tools. We will just unit test the remaining tools. 
+# MAGIC
+# MAGIC The techniques applied before can be easily implemented for these tools too.
 
 # COMMAND ----------
 
@@ -348,5 +393,15 @@ print(summary1)
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC End the active run which we started at the beginning. 
+
+# COMMAND ----------
+
 #stop all active runs
 mlflow.end_run()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Now we can view all the evaluation runs in the experiment
