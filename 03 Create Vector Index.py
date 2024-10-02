@@ -26,6 +26,7 @@
 
 # MAGIC %md
 # MAGIC ####Create a Vector Search endpoint
+# MAGIC vector Search Endpoint serves the vector search index. You can query and update the endpoint using the REST API or the SDK. Endpoints scale automatically to support the size of the index or the number of concurrent requests. See [Create a vector search endpoint](https://docs.databricks.com/en/generative-ai/create-query-vector-search.html#create-a-vector-search-endpoint) for instructions.
 
 # COMMAND ----------
 
@@ -52,17 +53,37 @@ cpt_vector_index_name = f"{cpt_source_data_table}_index"
 
 # COMMAND ----------
 
-from databricks.vector_search.client import VectorSearchClient
+# MAGIC %md
+# MAGIC **NOTE:** Below command creates a Vector Search Endpoint and will take few minutes to complete. 
 
+# COMMAND ----------
+
+from databricks.vector_search.client import VectorSearchClient
+from datetime import timedelta
+import time
 #create the vector search endpoint if it does not exist
 #same endpoint can be used to serve both the indexes
 vsc = VectorSearchClient(disable_notice=True)
 
-if not endpoint_exists(vsc, vector_search_endpoint_name):
-    vsc.create_endpoint(name=vector_search_endpoint_name, endpoint_type="STANDARD")
+try:
+    vsc.create_endpoint(name=vector_search_endpoint_name,
+                        endpoint_type="STANDARD")
+    
+    time.sleep(5)
 
-wait_for_vs_endpoint_to_be_ready(vsc, vector_search_endpoint_name)
-print(f"Endpoint named {vector_search_endpoint_name} is ready.")
+    vsc.wait_for_endpoint(name=vector_search_endpoint_name,
+                                timeout=timedelta(minutes=10),
+                                verbose=True)
+    
+    print(f"Endpoint named {vector_search_endpoint_name} is ready.")
+
+except Exception as e:
+    if "already exists" in str(e):
+        print(f"Endpoint named {vector_search_endpoint_name} already exists.")
+    else:
+        raise e
+
+
 
 # COMMAND ----------
 
@@ -95,8 +116,7 @@ client.predict(endpoint="databricks-bge-large-en", inputs={"input": ["What is Ap
 
 # MAGIC %md
 # MAGIC ####Create Vector Search Index
-# MAGIC
-# MAGIC To learn more about creating Vector Indexes, visit this [link](https://docs.databricks.com/en/generative-ai/create-query-vector-search.html). 
+# MAGIC The vector search index is created from a Delta table and is optimized to provide real-time approximate nearest neighbor searches. The goal of the search is to identify documents that are similar to the query. Vector search indexes appear in and are governed by Unity Catalog. To learn more about creating Vector Indexes, visit this [link](https://docs.databricks.com/en/generative-ai/create-query-vector-search.html). 
 # MAGIC
 # MAGIC We will now create the vector indexes. Our vector index will be of `Delta Sync Index` type. [[Read More](https://docs.databricks.com/en/generative-ai/create-query-vector-search.html#create-a-vector-search-index)] 
 # MAGIC
@@ -120,19 +140,19 @@ spark.sql(f"ALTER TABLE {cpt_source_data_table} SET TBLPROPERTIES (delta.enableC
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ######NOTE
-# MAGIC Below section creates a vector search index and does an initial sync. Some time this could take longer and the cell execution might timeout. You can re-run the cell to finish to completion
+# MAGIC **NOTE:** Below section creates a vector search index and does an initial sync. Some time this could take longer and the cell execution might timeout. You can re-run the cell to finish to completion
 
 # COMMAND ----------
 
-sbc_index = create_delta_sync_vector_search_index(
-  vector_search_endpoint_name=vector_search_endpoint_name,
+sbc_index = vsc.create_delta_sync_index_and_wait(
+  endpoint_name=vector_search_endpoint_name,
   index_name=sbc_vector_index_name,
   source_table_name=sbc_source_data_table,
-  primary_key_column=sbc_source_data_table_id_field,
+  primary_key=sbc_source_data_table_id_field,
   embedding_source_column=sbc_source_data_table_text_field,
-  embedding_endpoint_name=embedding_endpoint_name,
-  update_mode="TRIGGERED"
+  embedding_model_endpoint_name=embedding_endpoint_name,
+  pipeline_type="TRIGGERED",
+  verbose=True
 )
 
 # COMMAND ----------
@@ -143,19 +163,19 @@ sbc_index = create_delta_sync_vector_search_index(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ######NOTE
-# MAGIC Below section creates a vector search index and does an initial sync. Some time this could take longer and the cell execution might timeout. You can re-run the cell to finish to completion
+# MAGIC **NOTE:** Below section creates a vector search index and does an initial sync. Some time this could take longer and the cell execution might timeout. You can re-run the cell to finish to completion
 
 # COMMAND ----------
 
-cpt_index = create_delta_sync_vector_search_index(
-  vector_search_endpoint_name=vector_search_endpoint_name,
+cpt_index = vsc.create_delta_sync_index_and_wait(
+  endpoint_name=vector_search_endpoint_name,
   index_name=cpt_vector_index_name,
   source_table_name=cpt_source_data_table,
-  primary_key_column=cpt_source_data_table_id_field,
+  primary_key=cpt_source_data_table_id_field,
   embedding_source_column=cpt_source_data_table_text_field,
-  embedding_endpoint_name=embedding_endpoint_name,
-  update_mode="TRIGGERED"
+  embedding_model_endpoint_name=embedding_endpoint_name,
+  pipeline_type="TRIGGERED",
+  verbose=True
 )
 
 # COMMAND ----------

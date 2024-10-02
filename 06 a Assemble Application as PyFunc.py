@@ -532,15 +532,6 @@ from databricks.sdk.service.serving import ServedEntityInput, EndpointCoreConfig
 
 from datetime import timedelta
 
-def get_latest_model_version(model_name):
-    mlflow_client = MlflowClient(registry_uri="databricks-uc")
-    latest_version = 1
-    for mv in mlflow_client.search_model_versions(f"name='{model_name}'"):
-        version_int = int(mv.version)
-        if version_int > latest_version:
-            latest_version = version_int
-    return latest_version
-    
 latest_model_version = get_latest_model_version(registered_model_name)
 print(f"Latest model version is {latest_model_version}")
 
