@@ -218,6 +218,8 @@ display(cpt_df)
 
 # MAGIC %md
 # MAGIC #####`procedure_cost` 
+# MAGIC Table containing negotiated cost of each procedure.
+# MAGIC For simiplicity we will assign a random cost to each procedure
 
 # COMMAND ----------
 
