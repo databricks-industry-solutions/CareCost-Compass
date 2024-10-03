@@ -70,46 +70,6 @@ from langchain.output_parsers import PydanticOutputParser
 
 import pandas as pd
 
-class ToolRunner:
-    """A helper class to run a Tool and get results from the tool."""
-    def __init__(self,
-                 tool:BaseTool,
-                 evaluation_data:pd.DataFrame,
-                 tool_input_columns:str,
-                 tool_additional_output:str=None,
-                 iterate_rows:bool=False):
-        
-        self.tool = tool
-        self.evaluation_data = evaluation_data
-        self.tool_input_columns = tool_input_columns
-        self.tool_additional_output = tool_additional_output
-        self.iterate_rows = iterate_rows
-        self.tool_output = []
-
-    def run_tool(self, data:pd.DataFrame):
-        if self.iterate_rows:
-            tool_result = []
-            tool_output= []
-            for index, row in data.iterrows():
-                input_dict = { col:row[col] for col in self.tool_input_columns}
-                print(f"Running tool with input: {input_dict}")
-                tool_result.append(self.tool.run(input_dict))
-
-                if self.tool_additional_output is not None:
-                    tool_output.append(getattr(self.tool, self.tool_additional_output))
-                    setattr(self, self.tool_additional_output, tool_output)
-        else:
-            input_dict = { col:self.evaluation_data[col].tolist()  for col in self.tool_input_columns}
-            print(f"Running tool with input: {input_dict}")
-            tool_result = self.tool.run(input_dict)
-
-            if self.tool_additional_output is not None:
-                tool_output = getattr(self.tool, self.tool_additional_output)
-                setattr(self, self.tool_additional_output, tool_output)
-        
-        return tool_result
-
-
 class RetrieverConfig(BaseModel):
     """A data class for passing around vector index configuration"""
     vector_search_endpoint_name:str

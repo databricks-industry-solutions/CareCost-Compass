@@ -117,10 +117,10 @@ with mlflow.start_run(experiment_id=experiment.experiment_id,
             qc = QuestionClassifier(model_endpoint_name=model_name, 
                                     categories_and_description=categories_and_description).get_tool_instance()
             
-            tr = ToolRunner(qc, eval_data, tool_input_columns=["questions"])
+            eval_fn = lambda data : qc.run({"questions":data["questions"].tolist()})
 
             result = mlflow.evaluate(
-                tr.run_tool,
+                eval_fn,
                 eval_data,
                 targets="ground_truth",
                 model_type="question-answering",
