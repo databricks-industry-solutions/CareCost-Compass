@@ -24,6 +24,8 @@
 # MAGIC ### Lets evaluate all the tools we built to select appropriate parameters
 # MAGIC
 # MAGIC **NOTE:** For the sake of simplicity, we are performing full evaluation only on few tools. But we can extend the same concept to all the tools being used.
+# MAGIC
+# MAGIC <img src="./resources/star.png" width="40">Also see MLFlow Tracing in action in the results section after you execute each command
 
 # COMMAND ----------
 
@@ -40,8 +42,8 @@ master_run_info = mlflow.start_run(experiment_id=experiment.experiment_id,
 
 # COMMAND ----------
 
-mi = MemberIdRetriever("databricks-mixtral-8x7b-instruct")
-mi.get_member_id("Member id is:1234.")
+mi = MemberIdRetriever("databricks-mixtral-8x7b-instruct").get_tool_instance()
+mi.run({"question":"Member id is:1234."})
 
 # COMMAND ----------
 
@@ -66,7 +68,8 @@ categories_and_description = {
 
 qc = QuestionClassifier(
     model_endpoint_name="databricks-meta-llama-3-1-70b-instruct", 
-    categories_and_description=categories_and_description)
+    categories_and_description=categories_and_description
+    ).get_tool_instance()
 
 print(qc.run({"questions": ["What is the procedure cost for a shoulder mri","How many stars are there in galaxy"]}))
 
@@ -112,7 +115,8 @@ with mlflow.start_run(experiment_id=experiment.experiment_id,
             nested=True) as run:
 
             qc = QuestionClassifier(model_endpoint_name=model_name, 
-                                    categories_and_description=categories_and_description)
+                                    categories_and_description=categories_and_description).get_tool_instance()
+            
             tr = ToolRunner(qc, eval_data, tool_input_columns=["questions"])
 
             result = mlflow.evaluate(
@@ -151,9 +155,13 @@ retriever_config = RetrieverConfig(vector_search_endpoint_name="care_cost_vs_end
                             vector_index_name=f"{catalog}.{schema}.{sbc_details_table_name}_index",
                             vector_index_id_column="id",
                             retrieve_columns=["id","content"])
-br = BenefitsRAG(model_endpoint_name="databricks-meta-llama-3-1-70b-instruct", retriever_config=retriever_config)
 
-print(br.run({"client_id":"sugarshack", "question":"How much does Xray of shoulder cost?"}))
+br = BenefitsRAG(model_endpoint_name="databricks-meta-llama-3-1-70b-instruct",
+                 retriever_config=retriever_config
+                 )
+br_tool = br.get_tool_instance()
+
+print(br_tool.run({"client_id":"sugarshack", "question":"How much does Xray of shoulder cost?"}))
 
 br.retrieved_documents
 
@@ -217,12 +225,20 @@ with mlflow.start_run(experiment_id=experiment.experiment_id,
                                 retrieve_columns=["id","content"])
             
             br = BenefitsRAG(model_endpoint_name=model_name, retriever_config=retriever_config)
-            tr = ToolRunner(br, eval_data, ["question","client_id"],"retrieved_documents",True)
-            tool_result = tr.run_tool(eval_data)
+            br_tool = br.get_tool_instance()
+            
+            tool_input_columns = ["question","client_id"]
+            tool_result = []
+            tool_output= []
+            for index, row in eval_data.iterrows():
+                input_dict = { col:row[col] for col in tool_input_columns}
+                print(f"Running tool with input: {input_dict}")
+                tool_result.append(br_tool.run(input_dict))
+                tool_output.append(br.retrieved_documents)
 
-            retrieved_documents =    [
+            retrieved_documents = [
                     [{"content":doc.page_content} for doc in doclist]  
-                for doclist in getattr(tr, "retrieved_documents")]
+                for doclist in tool_output ]
 
             #Let us create the eval_df structure
             eval_df = pd.DataFrame({
@@ -262,7 +278,7 @@ retriever_config = RetrieverConfig(vector_search_endpoint_name="care_cost_vs_end
                             vector_index_id_column="id",
                             retrieve_columns=["code","description"])
 
-pr = ProcedureRetriever(retriever_config)
+pr = ProcedureRetriever(retriever_config).get_tool_instance()
 pr.run({"question": "What is the procedure code for hip replacement?"})
 
 # COMMAND ----------
@@ -276,7 +292,7 @@ pr.run({"question": "What is the procedure code for hip replacement?"})
 
 # COMMAND ----------
 
-cid_lkup = ClientIdLookup(f"{catalog}.{schema}.{member_table_name}")
+cid_lkup = ClientIdLookup(f"{catalog}.{schema}.{member_table_name}").get_tool_instance()
 cid_lkup.run({"member_id": "1234"})
 
 # COMMAND ----------
@@ -290,7 +306,7 @@ cid_lkup.run({"member_id": "1234"})
 
 # COMMAND ----------
 
-pc_lkup = ProcedureCostLookup(f"{catalog}.{schema}.{procedure_cost_table_name}")
+pc_lkup = ProcedureCostLookup(f"{catalog}.{schema}.{procedure_cost_table_name}").get_tool_instance()
 pc_lkup.run({"procedure_code": "23920"})
 
 # COMMAND ----------
@@ -304,7 +320,7 @@ pc_lkup.run({"procedure_code": "23920"})
 
 # COMMAND ----------
 
-accum_lkup = MemberAccumulatorsLookup(f"{catalog}.{schema}.{member_accumulators_table_name}")
+accum_lkup = MemberAccumulatorsLookup(f"{catalog}.{schema}.{member_accumulators_table_name}").get_tool_instance()
 accum_lkup.run({"member_id": "1234"})
 
 # COMMAND ----------
@@ -330,14 +346,18 @@ retriever_config = RetrieverConfig(vector_search_endpoint_name="care_cost_vs_end
                             vector_index_name=f"{catalog}.{schema}.{sbc_details_table_name}_index",
                             vector_index_id_column="id",
                             retrieve_columns=["id","content"])
-br = BenefitsRAG(model_endpoint_name="databricks-meta-llama-3-1-70b-instruct", retriever_config=retriever_config)
+
+br = BenefitsRAG(model_endpoint_name="databricks-meta-llama-3-1-70b-instruct", 
+                 retriever_config=retriever_config
+                 ).get_tool_instance()
+                 
 benefit_str = br.run({"client_id":"sugarshack", "question":"How much does Xray of shoulder cost?"})
 benefit = Benefit.model_validate_json(benefit_str)
 
-accum_lkup = MemberAccumulatorsLookup(f"{catalog}.{schema}.{member_accumulators_table_name}")
+accum_lkup = MemberAccumulatorsLookup(f"{catalog}.{schema}.{member_accumulators_table_name}").get_tool_instance()
 accum_result = accum_lkup.run({"member_id": member_id})
 
-mcc = MemberCostCalculator()
+mcc = MemberCostCalculator().get_tool_instance()
 mcc.run({"benefit":benefit, 
          "procedure_cost":procedure_cost, 
          "member_deductibles": accum_result})
@@ -367,26 +387,31 @@ retriever_config = RetrieverConfig(vector_search_endpoint_name="care_cost_vs_end
                             vector_index_name=f"{catalog}.{schema}.{sbc_details_table_name}_index",
                             vector_index_id_column="id",
                             retrieve_columns=["id","content"])
-br = BenefitsRAG(model_endpoint_name="databricks-meta-llama-3-1-70b-instruct", retriever_config=retriever_config)
+
+br = BenefitsRAG(model_endpoint_name="databricks-meta-llama-3-1-70b-instruct",
+                 retriever_config=retriever_config
+                 ).get_tool_instance()
+
 benefit_str = br.run({"client_id":"sugarshack", "question":"How much does Xray of shoulder cost?"})
 benefit = Benefit.model_validate_json(benefit_str)
 
-accum_lkup = MemberAccumulatorsLookup(f"{catalog}.{schema}.{member_accumulators_table_name}")
+accum_lkup = MemberAccumulatorsLookup(f"{catalog}.{schema}.{member_accumulators_table_name}").get_tool_instance()
 accum_result = accum_lkup.run({"member_id": member_id})
 
-mcc = MemberCostCalculator()
+mcc = MemberCostCalculator().get_tool_instance()
+
 cost_result = mcc.run({"benefit":benefit, 
          "procedure_cost":procedure_cost, 
          "member_deductibles": accum_result})
 
-rs = ResponseSummarizer("databricks-meta-llama-3-1-70b-instruct")
+rs = ResponseSummarizer("databricks-meta-llama-3-1-70b-instruct").get_tool_instance()
 summary = rs.run({"notes":cost_result.notes})
 
 print(summary)
 
 # COMMAND ----------
 
-rs1 = ResponseSummarizer("databricks-dbrx-instruct")
+rs1 = ResponseSummarizer("databricks-dbrx-instruct").get_tool_instance()
 summary1 = rs1.run({"notes":cost_result.notes})
 
 print(summary1)
@@ -404,4 +429,29 @@ mlflow.end_run()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Now we can view all the evaluation runs in the experiment
+# MAGIC ####Inspect Evaluation Runs in MLFlow
+# MAGIC Now we can view all the evaluation runs in the experiment. Navigate to `Experiments` page and select the `carecost_compass_agent` experiment.
+# MAGIC You can see the tool evaluation runs grouped as below
+# MAGIC
+# MAGIC <img src="./resources/tool_eval_1.png">
+# MAGIC
+# MAGIC **You can click open each run and view traces and databricks-agent evaluation results**
+# MAGIC
+# MAGIC ######Traces
+# MAGIC <img src="./resources/tool_eval_traces_dbrx.png">
+# MAGIC
+# MAGIC
+# MAGIC ######Evaluation Results
+# MAGIC <img src="./resources/tool_eval_rag_dbrx.png">
+# MAGIC
+# MAGIC ######Detailed Assesments
+# MAGIC You can now click open each input and see detailed assesments for each result
+# MAGIC <img src="./resources/tool_eval_rag_details_1.png">
+# MAGIC
+# MAGIC <img src="./resources/tool_eval_rag_details_2.png">
+# MAGIC
+# MAGIC
+
+# COMMAND ----------
+
+

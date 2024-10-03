@@ -118,24 +118,29 @@ class CareCostCompassAgent(PythonModel):
     self.member_table_name = model_config["member_table_name"]
     self.procedure_cost_table_name = model_config["procedure_cost_table_name"]
     self.member_accumulators_table_name = model_config["member_accumulators_table_name"]
-                                                     
+
+    #Start instantiating tools                                    
     self.question_classifier = QuestionClassifier(model_endpoint_name=self.question_classifier_model_endpoint_name,
-                            categories_and_description=self.invalid_question_category)
+                            categories_and_description=self.invalid_question_category).get_tool_instance()
     
-    self.client_id_lookup = ClientIdLookup(fq_member_table_name=self.member_table_name)
+    self.client_id_lookup = ClientIdLookup(fq_member_table_name=self.member_table_name).get_tool_instance()
     
+    log_print("***************")
+    log_print(type(self.client_id_lookup).__mro__)
+    log_print("***************")
+
     self.benefit_rag = BenefitsRAG(model_endpoint_name=self.benefit_retriever_model_endpoint_name,
-                              retriever_config=self.benefit_retriever_config)
+                              retriever_config=self.benefit_retriever_config).get_tool_instance()
     
-    self.procedure_code_retriever = ProcedureRetriever(retriever_config=self.procedure_code_retriever_config)
+    self.procedure_code_retriever = ProcedureRetriever(retriever_config=self.procedure_code_retriever_config).get_tool_instance()
 
-    self.procedure_cost_lookup = ProcedureCostLookup(fq_procedure_cost_table_name=self.procedure_cost_table_name)
+    self.procedure_cost_lookup = ProcedureCostLookup(fq_procedure_cost_table_name=self.procedure_cost_table_name).get_tool_instance()
 
-    self.member_accumulator_lookup = MemberAccumulatorsLookup(fq_member_accumulators_table_name=self.member_accumulators_table_name)
+    self.member_accumulator_lookup = MemberAccumulatorsLookup(fq_member_accumulators_table_name=self.member_accumulators_table_name).get_tool_instance()
 
-    self.member_cost_calculator = MemberCostCalculator()
+    self.member_cost_calculator = MemberCostCalculator().get_tool_instance()
 
-    self.summarizer = ResponseSummarizer(model_endpoint_name=self.summarizer_model_endpoint_name)  
+    self.summarizer = ResponseSummarizer(model_endpoint_name=self.summarizer_model_endpoint_name)  .get_tool_instance()
   
   #we will create three flows that can run parallely
   async def __benefit_flow(self, member_id:str, question:str) -> Benefit:
@@ -248,7 +253,7 @@ class CareCostCompassAgent(PythonModel):
       ##########################################      
       ####Filter the question to only those that are valid
       log_print("Filtering:")
-      question_category = self.question_classifier.get_question_category(question)
+      question_category = self.question_classifier.run({"questions":[question]})[0]
       log_print("Question is :{question_category}")
       if question_category != "GOOD":
         log_print(f"Question is invalid: Category: {question_category}")
@@ -279,14 +284,15 @@ class CareCostCompassAgent(PythonModel):
 
       ##########################################
       ####Calculate member out of pocket cost
-      member_cost_calculation = self.member_cost_calculator.get_member_out_of_pocket_cost(benefit=benefit,
-                                                                                          procedure_cost=proc_cost,
-                                                                                          member_deductibles=member_deductibles)
+      member_cost_calculation = self.member_cost_calculator.run({"benefit":benefit,
+                                                                  "procedure_cost":proc_cost,
+                                                                  "member_deductibles":member_deductibles
+                                                                  })
       log_print("Calculated cost")
       log_print(f"in_network_cost:{member_cost_calculation.in_network_cost}")
       log_print(f"out_network_cost:{member_cost_calculation.out_network_cost}")
       
-      return_message = self.summarizer.summarize(member_cost_calculation.notes)
+      return_message = self.summarizer.run({"notes":member_cost_calculation.notes})
 
     except Exception as e:
       error_string = f"Failed: {repr(e)}"
@@ -503,7 +509,7 @@ def execute_with_model(agent_pyfunc : PythonModel):
 
 #create a master run to hold all evaluation runs
 experiment = set_mlflow_experiment(experiment_tag)
-mlflow.start_run(experiment_id=experiment.experiment_id,run_name=f"02_pyfunc_agent")
+master_run_info = mlflow.start_run(experiment_id=experiment.experiment_id,run_name=f"02_pyfunc_agent")
 
 # COMMAND ----------
 
@@ -528,6 +534,13 @@ with mlflow.start_run(
     )
 
 results.metrics
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ####Check Results in MLFlow
+# MAGIC Now that the evaluation is done, we have all the runs captured in MLFlow experiment. Navigate to `Experiments` page and open the experiment named `carecost_compass_agent` and look at the evaluation results
+# MAGIC
 
 # COMMAND ----------
 
@@ -638,11 +651,17 @@ print(f"Latest model version is {latest_model_version}")
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC **NOTE: This can take up to 15 minutes and the Review App & Query Endpoint will not work until this deployment finishes.**
+
+# COMMAND ----------
+
 from databricks import agents
+
+deployment = agents.deploy(registered_model_name, latest_model_version, scale_to_zero=True,)
 
 agents.set_review_instructions(registered_model_name, "Thank you for testing Care Cost Compass agent. Ask an appropriate question and use your domain expertise to evaluate and give feedback on the agent's responses.")
 
-deployment = agents.deploy(registered_model_name, latest_model_version, scale_to_zero=True,)
 
 # COMMAND ----------
 
@@ -693,4 +712,7 @@ display_results(result["predictions"]["content"])
 
 # COMMAND ----------
 
-
+# MAGIC %md
+# MAGIC ###Gather Feedback
+# MAGIC Now that you have deployed the agent as an endpoint, you can use the review app to gather feedback from your stake-holders. 
+# MAGIC Read this [documentation](https://docs.databricks.com/en/generative-ai/agent-evaluation/human-evaluation.html#review-app-ui) for detailed explanation
