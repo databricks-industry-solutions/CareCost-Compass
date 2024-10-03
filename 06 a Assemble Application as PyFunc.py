@@ -57,7 +57,7 @@ def log_print(msg):
 # MAGIC `predict` - this function houses all the logic that is run every time an input request is made. We will implement the application logic here.
 # MAGIC
 # MAGIC ####Model Input and Output
-# MAGIC Our model is being built as Chat Agent and that dictates the model signature that we are going to use. 
+# MAGIC Our model is being built as Chat Agent and that dictates the model signature that we are going to use. So, request will be `ChatCompletionRequest`
 # MAGIC
 # MAGIC The `data` input to a pyfunc model can be a Pandas DataFrame , Pandas Series , Numpy Array, List or a Dictionary. For our implementation we will be expecting a Pandas DataFrame as input. Since its a Chat agent, it will be having the schema of `mlflow.models.rag_signatures.Message`.
 # MAGIC
@@ -549,11 +549,6 @@ from mlflow.models.signature import ModelSignature
 from typing import List
 import dataclasses
 from dataclasses import field, dataclass
-
-#@dataclass
-#class CareCostChatCompletionRequest(ChatCompletionRequest):
-#    messages: List[Message] = field(default_factory=lambda: [Message()])
-#    member_id: str = field(default_factory=lambda:"")
 
 signature_new = ModelSignature(
     inputs=ChatCompletionRequest,
