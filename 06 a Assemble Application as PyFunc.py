@@ -125,10 +125,6 @@ class CareCostCompassAgent(PythonModel):
     
     self.client_id_lookup = ClientIdLookup(fq_member_table_name=self.member_table_name).get_tool_instance()
     
-    log_print("***************")
-    log_print(type(self.client_id_lookup).__mro__)
-    log_print("***************")
-
     self.benefit_rag = BenefitsRAG(model_endpoint_name=self.benefit_retriever_model_endpoint_name,
                               retriever_config=self.benefit_retriever_config).get_tool_instance()
     

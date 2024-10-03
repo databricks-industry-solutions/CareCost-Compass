@@ -77,7 +77,10 @@ class RetrieverConfig(BaseModel):
     vector_index_id_column:str
     retrieve_columns:List[str]
 
-
+#This tool builder class is a workaround to solve the serialization issue with StructuredTool
+#Instance of a class extending StrcuturedTool looses the hierarchy when serialized
+#BaseCareCostToolBuilder instead uses `StructuredTool.from_function` method
+#and uses the execute function as the tool function for sync and async calls
 class BaseCareCostToolBuilder:
     name:str = None
     description:str = None
