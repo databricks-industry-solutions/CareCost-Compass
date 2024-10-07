@@ -53,14 +53,14 @@ spark.sql(f"CREATE VOLUME IF NOT EXISTS {catalog}.{schema}.{cpt_folder}")
 #Let us first copy the SBC files 
 
 for sbc_file in sbc_files:
-  dbutils.fs.cp(f"file:/Workspace/{'/'.join(project_root_path)}/resources/{sbc_file}",sbc_folder_path,True)
+  dbutils.fs.cp(f"file:/Workspace/{project_root_path}/resources/{sbc_file}",sbc_folder_path,True)
 
 # COMMAND ----------
 
 #Now lets copy the cpt codes file
 #Downloaded from https://www.cdc.gov/nhsn/xls/cpt-pcm-nhsn.xlsx
 
-dbutils.fs.cp(f"file:/Workspace/{'/'.join(project_root_path)}/resources/{cpt_file}",cpt_folder_path,True)
+dbutils.fs.cp(f"file:/Workspace/{project_root_path}/resources/{cpt_file}",cpt_folder_path,True)
 
 # COMMAND ----------
 
