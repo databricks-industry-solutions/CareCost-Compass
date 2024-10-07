@@ -540,4 +540,9 @@ class ResponseSummarizer(BaseCareCostToolBuilder):
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ###Create Model
+
+# COMMAND ----------
+
 
