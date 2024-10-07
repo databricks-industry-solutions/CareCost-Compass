@@ -1,315 +1,38 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC #Assemble the Care Cost Compass Application
+# MAGIC #Let's Deploy The Agent
 # MAGIC
-# MAGIC ####Now it's time to assemble all the components that we have built so far and build the Agent. 
+# MAGIC ####Now it's time to log the model into MLFlow and deploy it into Mosaic AI Model Servving 
 # MAGIC <img src="./resources/build_6.png" alt="Assemble Agent" width="900"/>
 # MAGIC
-# MAGIC Since we made our components as LangChain Tools, we can use an AgentExecutor to run the process. 
 # MAGIC
-# MAGIC But since its a very straight forward process, for the sake of reducing latency of response and to improve accuracy, we can use a custom PyFunc model to build our Agent application and deploy it on Databricks Model Serving.
+# MAGIC ### Code Based MLFlow Logging
+# MAGIC Databricks recommends that we use code-based MLFlow logging instead of Serialization based MLFlow logging.
 # MAGIC
-# MAGIC ####MLFlow Python Function
-# MAGIC MLflow’s Python function, pyfunc, provides flexibility to deploy any piece of Python code or any Python model. The following are example scenarios where you might want to use the guide.
+# MAGIC **Code-based MLflow logging**: The chain’s code is captured as a Python file. The Python environment is captured as a list of packages. When the chain is deployed, the Python environment is restored, and the chain’s code is executed to load the chain into memory so it can be invoked when the endpoint is called.
 # MAGIC
-# MAGIC * Your model requires preprocessing before inputs can be passed to the model’s predict function.
-# MAGIC * Your model framework is not natively supported by MLflow.
-# MAGIC * Your application requires the model’s raw outputs to be post-processed for consumption.
-# MAGIC * The model itself has per-request branching logic.
-# MAGIC * You are looking to deploy fully custom code as a model.
+# MAGIC **Serialization-based MLflow logging**: The chain’s code and current state in the Python environment is serialized to disk, often using libraries such as pickle or joblib. When the chain is deployed, the Python environment is restored, and the serialized object is loaded into memory so it can be invoked when the endpoint is called.
 # MAGIC
-# MAGIC [Read More](https://docs.databricks.com/en/machine-learning/model-serving/deploy-custom-models.html)
-# MAGIC
-# MAGIC
-# MAGIC
-# MAGIC
+# MAGIC [Read More](https://docs.databricks.com/en/generative-ai/log-agent.html#code-based-vs-serialization-based-logging)
 # MAGIC
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ###Load Tools
+# MAGIC ###Load Tools and Model Definition
 
 # COMMAND ----------
 
-# MAGIC %run "./05 a Create All Tools"
-
-# COMMAND ----------
-
-#a utility function to use logging api instead of print
-import logging
-def log_print(msg):
-    logging.warning(f"=====> {msg}")
-
+# MAGIC %run "./05 a Create All Tools and Model"
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ###Build Agent
-# MAGIC ####CareCostCompassAgent
-# MAGIC `CareCostCompassAgent` is our Python Function that will implement the logic necessary for our Agent.
-# MAGIC
-# MAGIC There are two required functions that we need to implement:
-# MAGIC
-# MAGIC `load_context` - anything that needs to be loaded just one time for the model to operate should be defined in this function. This is critical so that the system minimize the number of artifacts loaded during the predict function, which speeds up inference.
-# MAGIC We will be instantiating all the tools in this method
-# MAGIC
-# MAGIC `predict` - this function houses all the logic that is run every time an input request is made. We will implement the application logic here.
-# MAGIC
-# MAGIC ####Model Input and Output
-# MAGIC Our model is being built as Chat Agent and that dictates the model signature that we are going to use. So, request will be `ChatCompletionRequest`
-# MAGIC
-# MAGIC The `data` input to a pyfunc model can be a Pandas DataFrame , Pandas Series , Numpy Array, List or a Dictionary. For our implementation we will be expecting a Pandas DataFrame as input. Since its a Chat agent, it will be having the schema of `mlflow.models.rag_signatures.Message`.
-# MAGIC
-# MAGIC Our response will be just a `mlflow.models.rag_signatures.StringMessage` 
-# MAGIC
-# MAGIC ####Workflow
-# MAGIC We will implement the below workflow in the `predict` method of pyfunc model.
-# MAGIC
-# MAGIC <img src="./resources/logic_workflow.png" width="700">
+# MAGIC ### Test Model
 
 # COMMAND ----------
 
-import mlflow
-import numpy as np
-import pandas as pd
-from dataclasses import asdict
-from mlflow.pyfunc import PythonModel, PythonModelContext
-from mlflow.models.rag_signatures import (
-    ChatCompletionRequest,
-    ChatCompletionResponse, 
-    Message,
-    StringResponse
-)
-import asyncio
-
-class CareCostCompassAgent(PythonModel):
-  """Agent that can answer questions about medical procedure cost."""
-
-  #lets define the categories for our question classifier
-  invalid_question_category = {
-    "PROFANITY": "Content has inappropriate language",
-    "RACIAL": "Content has racial slur.",
-    "RUDE": "Content has angry tone and has unprofessional language.",
-    "IRRELEVANT": "The question is not about a medical procedure cost.",
-    "GOOD": "Content is a proper question about a cost of medical procedure."
-  }
-
-  def load_context(self, context):    
-    """
-    Loads the context and initilizes the connections
-    """
-
-    #get the config from context
-    model_config = context.model_config
-    
-    self.db_host_url = model_config["db_host_url"]
-
-    #instrumentation for feedback app as it does not let you post multiple messages
-    #below variables are so that we can use it for review app
-    self.environment = model_config["environment"]
-    self.default_parameter_json_string = model_config["default_parameter_json_string"]
-    
-    self.question_classifier_model_endpoint_name = model_config["question_classifier_model_endpoint_name"]
-    self.benefit_retriever_model_endpoint_name = model_config["benefit_retriever_model_endpoint_name"]
-    self.benefit_retriever_config = RetrieverConfig(**model_config["benefit_retriever_config"])
-    self.procedure_code_retriever_config = RetrieverConfig(**model_config["procedure_code_retriever_config"])
-    self.summarizer_model_endpoint_name = model_config["summarizer_model_endpoint_name"]
-    self.member_table_name = model_config["member_table_name"]
-    self.procedure_cost_table_name = model_config["procedure_cost_table_name"]
-    self.member_accumulators_table_name = model_config["member_accumulators_table_name"]
-
-    #Start instantiating tools                                    
-    self.question_classifier = QuestionClassifier(model_endpoint_name=self.question_classifier_model_endpoint_name,
-                            categories_and_description=self.invalid_question_category).get_tool_instance()
-    
-    self.client_id_lookup = ClientIdLookup(fq_member_table_name=self.member_table_name).get_tool_instance()
-    
-    self.benefit_rag = BenefitsRAG(model_endpoint_name=self.benefit_retriever_model_endpoint_name,
-                              retriever_config=self.benefit_retriever_config).get_tool_instance()
-    
-    self.procedure_code_retriever = ProcedureRetriever(retriever_config=self.procedure_code_retriever_config).get_tool_instance()
-
-    self.procedure_cost_lookup = ProcedureCostLookup(fq_procedure_cost_table_name=self.procedure_cost_table_name).get_tool_instance()
-
-    self.member_accumulator_lookup = MemberAccumulatorsLookup(fq_member_accumulators_table_name=self.member_accumulators_table_name).get_tool_instance()
-
-    self.member_cost_calculator = MemberCostCalculator().get_tool_instance()
-
-    self.summarizer = ResponseSummarizer(model_endpoint_name=self.summarizer_model_endpoint_name)  .get_tool_instance()
-  
-  #we will create three flows that can run parallely
-  async def __benefit_flow(self, member_id:str, question:str) -> Benefit:
-      ##########################################
-      ####Get client id
-      log_print("Getting client id:")
-      client_id = await self.client_id_lookup.arun({"member_id": member_id})
-      if client_id is None:
-        raise Exception("Member not found")
-
-      ##########################################
-      ####Get Coverage details
-      log_print("Getting Coverage details:")
-      benefit_json = await self.benefit_rag.arun({"client_id":client_id,"question":question})
-      benefit = Benefit.model_validate_json(benefit_json)
-      log_print("Coverage details:")
-      log_print(benefit_json)
-      return benefit
-    
-  async def __procedure_flow(self, question:str) -> float:
-      ##########################################
-      ####Get procedure code and description
-      proc_code, proc_description = await self.procedure_code_retriever.arun({"question":question})
-      log_print("Procedure")
-      log_print(f"{proc_code}:{proc_description}")
-      
-      ##########################################
-      ####Get procedure cost
-      proc_cost = await self.procedure_cost_lookup.arun({"procedure_code":proc_code})
-      if proc_cost is None:
-        raise Exception(f"Procedure code {proc_code} not found")
-      else:
-        log_print(f"Procedure Cost: {proc_cost}")
-      
-      return proc_cost
-
-  async def __member_accumulator_flow(self, member_id:str) -> dict:
-      ##########################################
-      ####Get member deductibles"
-      member_deductibles = await self.member_accumulator_lookup.arun({"member_id":member_id})
-      if member_deductibles is None:
-        raise Exception("Member not found")
-      else:
-        log_print("Member deductibles")
-        log_print(member_deductibles)
-      
-      return member_deductibles
-
-  async def __async_run(self, member_id, question) -> []:
-      """Runs the three flows in parallel"""
-      tasks = [
-        asyncio.create_task(self.__benefit_flow(member_id, question)),
-        asyncio.create_task(self.__procedure_flow(question)),
-        asyncio.create_task(self.__member_accumulator_flow(member_id))
-      ]      
-      return await asyncio.gather(*tasks)
-      
-
-  @mlflow.trace(name="predict", span_type="func")
-  def predict(self, context:PythonModelContext, model_input: pd.DataFrame, params:dict) -> StringResponse:
-    """
-    Generate answer for the question.
-
-    Args:
-        context: The PythonModelContext for the model
-        model_input: we will not use this input
-        params: Question and member id
-
-    Returns:
-        Predicted answer: string
-    """
-    try:
-
-      log_print("Inside predict")
-      ##########################################
-      ####Get rows of dataframe as list of messages
-      if isinstance(model_input, pd.DataFrame):
-          model_input = model_input.to_dict(orient="records")
-      else:
-        raise Exception("Invalid input: Expecting a pandas.DataFrame")
-
-      
-      ##########################################
-      ####Get member id and question
-
-      messages = model_input[0]["messages"]
-      
-      member_id_sentence = None
-      question = None
-      
-      for message in messages:
-        if self.environment in ["dev", "test"]:
-          ##This workaround is for making our agent work with review app
-          ##This is required only because we need two messages in the request
-          ##one for member id and other for question
-          ##Currently review app does not support multiple messages in the request
-
-          #In non production env, we will use a hardcoded member id
-          #dev/test
-          parameters = json.loads(self.default_parameter_json_string)
-        else:
-          #production
-          if message["role"] == "system":
-            parameter_json = message["content"]
-            parameters = json.loads(parameter_json)
-
-        if message["role"] == "user":
-          question = message["content"]
-
-      ##########################################      
-      ####Filter the question to only those that are valid
-      log_print("Filtering:")
-      question_category = self.question_classifier.run({"questions":[question]})[0]
-      log_print("Question is :{question_category}")
-      if question_category != "GOOD":
-        log_print(f"Question is invalid: Category: {question_category}")
-        error_categories = [c.strip() for c in question_category.split(',')]
-        categories = [self.invalid_question_category[c] 
-                    if c in self.invalid_question_category else "Unsuitable question" 
-                  for c in error_categories]
-        error_message = "\n".join(categories)
-        raise Exception(error_message)
-
-      ##########################################
-      ####Get member id
-      log_print("Getting member id:")
-      member_id = parameters["member_id"]#self.member_id_retriever.get_member_id(member_id_sentence)
-      if member_id is None:
-        raise Exception("Invalid member id {member_id}")
-      else:
-        log_print(f"Member id: {member_id}")
-
-      ############################################
-      #### Run the flows, namely benefit, procedure, member_accumulator parallely
-
-      async_results = asyncio.run(self.__async_run(member_id, question))
-
-      benefit = async_results[0]
-      proc_cost = async_results[1]
-      member_deductibles = async_results[2]
-
-      ##########################################
-      ####Calculate member out of pocket cost
-      member_cost_calculation = self.member_cost_calculator.run({"benefit":benefit,
-                                                                  "procedure_cost":proc_cost,
-                                                                  "member_deductibles":member_deductibles
-                                                                  })
-      log_print("Calculated cost")
-      log_print(f"in_network_cost:{member_cost_calculation.in_network_cost}")
-      log_print(f"out_network_cost:{member_cost_calculation.out_network_cost}")
-      
-      return_message = self.summarizer.run({"notes":member_cost_calculation.notes})
-
-    except Exception as e:
-      error_string = f"Failed: {repr(e)}"
-      logging.error(error_string)
-      if len(e.args)>0:
-        return_message = f"Sorry, I cannot answer that question because of following reasons:\n {e.args[0]}"
-      else:
-        return_message = f"Sorry, I cannot answer that question because of an error.\n{repr(e)}"
-    
-    return_message = asdict(StringResponse(return_message))
-    #asdict(ChatCompletionResponse(
-    #  choices=[ChainCompletionChoice(Message(role="assistant", content=return_message) )]
-    #))
-
-    return return_message
-  
-
-# COMMAND ----------
-
-def get_model_config(db_host_url:str,
-                       environment:str,
+def get_model_config(environment:str,
                        catalog:str,
                        schema:str,
                        
@@ -347,7 +70,6 @@ def get_model_config(db_host_url:str,
                                 retrieve_columns=cpt_code_retrieve_columns)
 
     return {
-        "db_host_url":db_host_url,
         "environment" : "dev",
         "default_parameter_json_string" : default_parameter_json_string, #'{"member_id":"1234"}',
         "question_classifier_model_endpoint_name":question_classifier_model_endpoint_name,
@@ -357,7 +79,11 @@ def get_model_config(db_host_url:str,
         "member_table_name":fq_member_table_name,
         "procedure_cost_table_name":fq_procedure_cost_table_name,
         "member_accumulators_table_name":fq_member_accumulators_table_name,
-        "summarizer_model_endpoint_name":summarizer_model_endpoint_name
+        "summarizer_model_endpoint_name":summarizer_model_endpoint_name,
+        "member_table_online_endpoint_name":f"{member_table_name}_endpoint".replace('_','-'),
+        "procedure_cost_table_online_endpoint_name":f"{procedure_cost_table_name}_endpoint".replace('_','-'),
+        "member_accumulators_table_online_endpoint_name":f"{member_accumulators_table_name}_endpoint".replace('_','-')
+
     }
 
 
@@ -369,8 +95,7 @@ nest_asyncio.apply()
 
 vector_search_endpoint_name="care_cost_vs_endpoint"
 
-test_model_config = get_model_config(db_host_url=db_host_url,
-                                environment="dev",
+test_model_config = get_model_config(environment="dev",
                                 catalog=catalog,
                                 schema=schema,
                                 member_table_name= member_table_name,
@@ -559,7 +284,6 @@ signature_new = ModelSignature(
 
 import mlflow
 from datetime import datetime
-import json
 from mlflow.models.resources import DatabricksServingEndpoint, DatabricksVectorSearchIndex
 
 model_name = "carecost_compass_agent"
@@ -574,8 +298,7 @@ with mlflow.start_run(experiment_id=experiment.experiment_id,
                       run_name=f"02_register_agent_{time_str}",
                       nested=True) as run:  
     
-    model_config = get_model_config(db_host_url=db_host_url,
-                    environment="dev",
+    model_config = get_model_config(environment="dev",
                     catalog=catalog,
                     schema=schema,
                     member_table_name= member_table_name,
@@ -594,8 +317,8 @@ with mlflow.start_run(experiment_id=experiment.experiment_id,
                     default_parameter_json_string='{"member_id":"1234"}')
 
     mlflow.pyfunc.log_model(
-        "model",
-        python_model=CareCostCompassAgent(),
+        artifact_path="model",
+        python_model=f"/Workspace/{project_root_path}/05 a Create All Tools and Model",
         artifacts={},
         model_config=model_config,
         pip_requirements=["mlflow==2.16.2",
@@ -613,14 +336,24 @@ with mlflow.start_run(experiment_id=experiment.experiment_id,
         registered_model_name=registered_model_name,
         example_no_conversion=True,
         resources=[
+            #Attach an M2M token to each endpoint resources needed by model
+            #model endpoints
             DatabricksServingEndpoint(endpoint_name=model_config["question_classifier_model_endpoint_name"]),
             DatabricksServingEndpoint(endpoint_name=model_config["benefit_retriever_model_endpoint_name"]),
             DatabricksServingEndpoint(endpoint_name=model_config["summarizer_model_endpoint_name"]),
+            #online table endpoints
+            DatabricksServingEndpoint(endpoint_name=model_config["member_table_online_endpoint_name"]),
+            DatabricksServingEndpoint(endpoint_name=model_config["procedure_cost_table_online_endpoint_name"]),
+            DatabricksServingEndpoint(endpoint_name=model_config["member_accumulators_table_online_endpoint_name"]),
+            #vector indexes
             DatabricksVectorSearchIndex(index_name=model_config["benefit_retriever_config"]["vector_index_name"]),  
-            DatabricksVectorSearchIndex(index_name=model_config["procedure_code_retriever_config"]["vector_index_name"])
+            DatabricksVectorSearchIndex(index_name=model_config["procedure_code_retriever_config"]["vector_index_name"])            
         ])
 
     run_id = run.info.run_id
+
+
+# COMMAND ----------
 
 #stop all active runs
 mlflow.end_run()
