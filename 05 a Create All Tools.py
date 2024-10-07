@@ -435,20 +435,20 @@ class MemberCostCalculatorInput(BaseModel):
   """Data class for tool input"""
   benefit:Benefit = Field(description="Benefit object for the member")
   procedure_cost:float = Field(description="Cost of the procedure")
-  member_deductibles:dict[str, Union[float,str] ] = Field(description="Accumulators for the member")
+  member_accumulators:dict[str, Union[float,str] ] = Field(description="Accumulators for the member")
 
 
 class MemberCostCalculator(BaseCareCostToolBuilder):
-    """A class to calculate the member out of pocket cost given the benefits, procedure cost and deductibles"""
+    """A class to calculate the member out of pocket cost given the benefits, procedure cost and member accumulators"""
     name : str = "MemberCostCalculator"
-    description : str = "calculates the estimated member out of pocket cost given the benefits, procedure cost and deductibles"
-    args_schema : Type[BaseModel] = MemberCostCalculatorInput
+    description : str = "calculates the estimated member out of pocket cost given the benefits, procedure cost and member accumulators"
+    args_schema : Type[MemberCostCalculatorInput] = MemberCostCalculatorInput
 
     @mlflow.trace(name="get_member_out_of_pocket_cost", span_type="func")
     def execute(self, 
                 benefit:Benefit,
                 procedure_cost:float,
-                member_deductibles:dict[str, Union[float,str] ]) -> MemberCost:
+                member_accumulators:dict[str, Union[float,str] ]) -> MemberCost:
         """
         Method to get estimated member out of pocket cost
         """
@@ -459,10 +459,10 @@ class MemberCostCalculator(BaseCareCostToolBuilder):
         notes=[benefit.text]
 
         #If oop_max has met member has to pay anything
-        if member_deductibles["mem_ded_agg"] < member_deductibles["oop_max"]:
+        if member_accumulators["mem_ded_agg"] < member_accumulators["oop_max"]:
           notes.append("Out of pocket maximum is not met.")
           #if annual deductible is met, only pay copay/coinsurance
-          if member_deductibles["mem_ded_agg"] >= member_deductibles["mem_deductible"]:
+          if member_accumulators["mem_ded_agg"] >= member_accumulators["mem_deductible"]:
             notes.append("Deductible is met.")
             if in_network_cost > 0:
               notes.append("This procedure is covered In-Network.")
