@@ -149,16 +149,23 @@ spark.sql(f"ALTER TABLE {cpt_source_data_table} SET TBLPROPERTIES (delta.enableC
 
 # COMMAND ----------
 
-sbc_index = vsc.create_delta_sync_index_and_wait(
-  endpoint_name=vector_search_endpoint_name,
-  index_name=sbc_vector_index_name,
-  source_table_name=sbc_source_data_table,
-  primary_key=sbc_source_data_table_id_field,
-  embedding_source_column=sbc_source_data_table_text_field,
-  embedding_model_endpoint_name=embedding_endpoint_name,
-  pipeline_type="TRIGGERED",
-  verbose=True
-)
+try:
+  sbc_index = vsc.create_delta_sync_index_and_wait(
+    endpoint_name=vector_search_endpoint_name,
+    index_name=sbc_vector_index_name,
+    source_table_name=sbc_source_data_table,
+    primary_key=sbc_source_data_table_id_field,
+    embedding_source_column=sbc_source_data_table_text_field,
+    embedding_model_endpoint_name=embedding_endpoint_name,
+    pipeline_type="TRIGGERED",
+    verbose=True
+  )
+except Exception as e:
+    if "already exists" in str(e):
+        print(f"Index named {vector_search_endpoint_name} already exists.")
+        sbc_index = vsc.get_index(vector_search_endpoint_name, sbc_vector_index_name)
+    else:
+        raise e
 
 # COMMAND ----------
 
@@ -172,16 +179,23 @@ sbc_index = vsc.create_delta_sync_index_and_wait(
 
 # COMMAND ----------
 
-cpt_index = vsc.create_delta_sync_index_and_wait(
-  endpoint_name=vector_search_endpoint_name,
-  index_name=cpt_vector_index_name,
-  source_table_name=cpt_source_data_table,
-  primary_key=cpt_source_data_table_id_field,
-  embedding_source_column=cpt_source_data_table_text_field,
-  embedding_model_endpoint_name=embedding_endpoint_name,
-  pipeline_type="TRIGGERED",
-  verbose=True
-)
+try: 
+  cpt_index = vsc.create_delta_sync_index_and_wait(
+    endpoint_name=vector_search_endpoint_name,
+    index_name=cpt_vector_index_name,
+    source_table_name=cpt_source_data_table,
+    primary_key=cpt_source_data_table_id_field,
+    embedding_source_column=cpt_source_data_table_text_field,
+    embedding_model_endpoint_name=embedding_endpoint_name,
+    pipeline_type="TRIGGERED",
+    verbose=True
+  )
+except Exception as e:
+    if "already exists" in str(e):
+        print(f"Index named {vector_search_endpoint_name} already exists.")
+        cpt_index = vsc.get_index(vector_search_endpoint_name, cpt_vector_index_name)
+    else:
+        raise e
 
 # COMMAND ----------
 
@@ -214,3 +228,7 @@ if results["result"]["row_count"] >0:
   display(results["result"]["data_array"])
 else:
   print("No records")
+
+# COMMAND ----------
+
+
