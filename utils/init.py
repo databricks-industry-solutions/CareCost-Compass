@@ -50,7 +50,7 @@ cpt_folder_path = f"/Volumes/{catalog}/{schema}/{cpt_folder}"
 # COMMAND ----------
 
 current_path = dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get()
-project_root_path = current_path.split("/")[:-1]
+project_root_path = "/".join(current_path.split("/")[1:-1])
 
 # COMMAND ----------
 
