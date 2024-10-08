@@ -391,7 +391,7 @@ agents.set_review_instructions(registered_model_name, "Thank you for testing Car
 
 # MAGIC %md
 # MAGIC ###Testing the endpoints
-# MAGIC
+# MAGIC **NOTE: We need to wait until the model serving endpoint is ready**
 
 # COMMAND ----------
 
@@ -439,4 +439,4 @@ display_results(result["predictions"]["content"])
 # MAGIC %md
 # MAGIC ###Gather Feedback
 # MAGIC Now that you have deployed the agent as an endpoint, you can use the review app to gather feedback from your stake-holders. 
-# MAGIC Read this [documentation](https://docs.databricks.com/en/generative-ai/agent-evaluation/human-evaluation.html#review-app-ui) for detailed explanation
+# MAGIC Read this [documentation](https://docs.databricks.com/en/generative-ai/agent-evaluation/human-evaluation.html#review-app-ui) for detailed explanation on how to use the Review App.
