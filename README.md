@@ -55,5 +55,5 @@ To run this demo in a Databricks Workspace, follow the below steps
 1. Use [Dabaricks Git Folders](https://docs.databricks.com/en/repos/index.html) and clone the repo into your workspace
 2. Create a `single-node` cluster for running the notebooks. This code is tested on a `DBR 14.3LTS ML` cluster. Add `scripts/init_script.sh` to the cluster by following this [documentation](https://docs.databricks.com/en/init-scripts/cluster-scoped.html). 
 3. Open the `utils/init` notebook and update the values in `Cmd 4` appropriately
-4. Start by running notebooks `01 Setup Data` to `06 a Assemble Application as PyFunc` sequentially. Follow along the documentation in the notebooks
+4. Start by running notebooks `01 Setup Data` to `06 b Building Evaluation Dataframe using Review App  Data` sequentially. Follow along the documentation in the notebooks
 
