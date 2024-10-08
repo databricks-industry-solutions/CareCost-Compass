@@ -4,7 +4,7 @@
 
 # COMMAND ----------
 
-# MAGIC %run "./05 a Create All Tools"
+# MAGIC %run "./05 a Create All Tools and Model"
 
 # COMMAND ----------
 
@@ -22,7 +22,7 @@ def generate_autogen_config(langchain_tools: List[StructuredTool]):
                 "required": [],
             },
         })
-        function_map[tool.name.lower().replace (' ', '_')]=tool.func
+        function_map[tool.name.lower().replace (' ', '_')]=tool._run
 
     print("****************")
     print(function_schema)
@@ -76,27 +76,27 @@ class CareCostReactAgent:
         self.procedure_cost_table_name = model_config["procedure_cost_table_name"]
         self.member_accumulators_table_name = model_config["member_accumulators_table_name"]
                                                         
-        self.member_id_retriever = MemberIdRetriever(model_endpoint_name=self.member_id_retriever_model_endpoint_name).get_tool_instance()
+        self.member_id_retriever = MemberIdRetriever(model_endpoint_name=self.member_id_retriever_model_endpoint_name)
 
         self.question_classifier = QuestionClassifier(model_endpoint_name=self.question_classifier_model_endpoint_name,
                                 categories_and_description=self.invalid_question_category
-                                ).get_tool_instance()
+                                )
         
-        self.client_id_lookup = ClientIdLookup(fq_member_table_name=self.member_table_name).get_tool_instance()
+        self.client_id_lookup = ClientIdLookup(fq_member_table_name=self.member_table_name)
         
         self.benefit_rag = BenefitsRAG(model_endpoint_name=self.benefit_retriever_model_endpoint_name,
                                 retriever_config=self.benefit_retriever_config
-                                ).get_tool_instance()
+                                )
         
-        self.procedure_code_retriever = ProcedureRetriever(retriever_config=self.procedure_code_retriever_config).get_tool_instance()
+        self.procedure_code_retriever = ProcedureRetriever(retriever_config=self.procedure_code_retriever_config)
 
-        self.procedure_cost_lookup = ProcedureCostLookup(fq_procedure_cost_table_name=self.procedure_cost_table_name).get_tool_instance()
+        self.procedure_cost_lookup = ProcedureCostLookup(fq_procedure_cost_table_name=self.procedure_cost_table_name)
 
-        self.member_accumulator_lookup = MemberAccumulatorsLookup(fq_member_accumulators_table_name=self.member_accumulators_table_name).get_tool_instance()
+        self.member_accumulator_lookup = MemberAccumulatorsLookup(fq_member_accumulators_table_name=self.member_accumulators_table_name)
 
-        self.member_cost_calculator = MemberCostCalculator().get_tool_instance()
+        self.member_cost_calculator = MemberCostCalculator()
 
-        self.summarizer = ResponseSummarizer(model_endpoint_name=self.summarizer_model_endpoint_name).get_tool_instance()
+        self.summarizer = ResponseSummarizer(model_endpoint_name=self.summarizer_model_endpoint_name)
 
         self.langchain_tools = [
             self.member_id_retriever,
