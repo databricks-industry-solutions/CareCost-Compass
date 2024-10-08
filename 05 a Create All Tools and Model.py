@@ -27,10 +27,10 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ###MLFlow Tracing for Agents
+# MAGIC ###MLflow Tracing for Agents
 # MAGIC Using MLflow Tracing you can log, analyze, and compare traces across different versions of generative AI applications. It allows you to debug your generative AI Python code and keep track of inputs and responses. Doing so can help you discover conditions or parameters that contribute to poor performance of your application. MLflow Tracing is tightly integrated with Databricks tools and infrastructure, allowing you to store and display all your traces in Databricks notebooks or the MLflow experiment UI as you run your code. [Read More](https://docs.databricks.com/en/mlflow/mlflow-tracing.html)
 # MAGIC
-# MAGIC We will be using MLFlow Tracing throughout this project. Look for the `@mlflow.trace` decorator on some of the methods
+# MAGIC We will be using MLflow Tracing throughout this project. Look for the `@mlflow.trace` decorator on some of the methods
 # MAGIC
 
 # COMMAND ----------
@@ -668,7 +668,7 @@ class ResponseSummarizer(BaseTool):
 # MAGIC
 # MAGIC But since its a very straight forward process, for the sake of reducing latency of response and to improve accuracy, we can use a custom PyFunc model to build our Agent application and deploy it on Databricks Model Serving.
 # MAGIC
-# MAGIC ####MLFlow Python Function
+# MAGIC ####MLflow Python Function
 # MAGIC MLflow’s Python function, pyfunc, provides flexibility to deploy any piece of Python code or any Python model. The following are example scenarios where you might want to use the guide.
 # MAGIC
 # MAGIC * Your model requires preprocessing before inputs can be passed to the model’s predict function.

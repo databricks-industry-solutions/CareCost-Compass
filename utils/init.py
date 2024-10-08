@@ -41,7 +41,7 @@ cpt_code_table_name = "cpt_codes"
 procedure_cost_table_name = "procedure_cost"
 sbc_details_table_name = "sbc_details"
 
-#Mlflow experiment tag
+#MLflow experiment tag
 experiment_tag = f"carecost_compass_agent"
 
 sbc_folder_path = f"/Volumes/{catalog}/{schema}/{sbc_folder}"
@@ -84,4 +84,4 @@ def set_mlflow_experiment(experiment_tag):
 print(f"Using catalog: {catalog}")
 print(f"Using schema: {schema}")
 print(f"Project root: {project_root_path}")
-print(f"MLFlow Experiment Path: {mlflow_experiment_base_path}")
+print(f"MLflow Experiment Path: {mlflow_experiment_base_path}")

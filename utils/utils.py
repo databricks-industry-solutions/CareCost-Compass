@@ -106,7 +106,7 @@ def start_mlflow_experiment(experiment_name):
     db_host = dbutils.notebook.entry_point.getDbutils().notebook().getContext().apiUrl().get()
     db_token = dbutils.notebook.entry_point.getDbutils().notebook().getContext().apiToken().get()
 
-    #Create an MLFlow experiment
+    #Create an MLflow experiment
     experiment_base_path = f"Users/{user_email}/mlflow_experiments"
     dbutils.fs.mkdirs(f"file:/Workspace/{experiment_base_path}")
     experiment_path = f"/{experiment_base_path}/{experiment_name}"

@@ -25,7 +25,7 @@
 # MAGIC
 # MAGIC **NOTE:** For the sake of simplicity, we are performing full evaluation only on few tools. But we can extend the same concept to all the tools being used.
 # MAGIC
-# MAGIC <img src="./resources/star.png" width="40">Also see MLFlow Tracing in action in the results section after you execute each command
+# MAGIC <img src="./resources/star.png" width="40">Also see MLflow Tracing in action in the results section after you execute each command
 
 # COMMAND ----------
 
@@ -51,7 +51,7 @@ mi.run({"question":"Member id is:1234."})
 # MAGIC ####Test and Evaluate QuestionClassifier
 # MAGIC
 # MAGIC `QuestionClassifier` is implemented using a simple Zero Shot prompt on an LLM. 
-# MAGIC We will create an evaluation dataframe with `input_text` and `expected_response` and use MLFlow Evaluate to asses how the response matches to the expected response. This can be achieved using the `exact_match/v1` metric available in the open-source MLflow LLM evaluation functionality. [Read More](https://docs.databricks.com/en/mlflow/llm-evaluate.html)
+# MAGIC We will create an evaluation dataframe with `input_text` and `expected_response` and use MLflow Evaluate to asses how the response matches to the expected response. This can be achieved using the `exact_match/v1` metric available in the open-source MLflow LLM evaluation functionality. [Read More](https://docs.databricks.com/en/mlflow/llm-evaluate.html)
 # MAGIC
 # MAGIC We will evaluate the model against two different model endpoints. 
 
@@ -427,7 +427,7 @@ mlflow.end_run()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ####Inspect Evaluation Runs in MLFlow
+# MAGIC ####Inspect Evaluation Runs in MLflow
 # MAGIC Now we can view all the evaluation runs in the experiment. Navigate to `Experiments` page and select the `carecost_compass_agent` experiment.
 # MAGIC You can see the tool evaluation runs grouped as below
 # MAGIC

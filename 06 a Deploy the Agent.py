@@ -2,12 +2,12 @@
 # MAGIC %md
 # MAGIC #Let's Deploy The Agent
 # MAGIC
-# MAGIC ####Now it's time to log the model into MLFlow and deploy it into Mosaic AI Model Servving 
+# MAGIC ####Now it's time to log the model into MLflow and deploy it into Mosaic AI Model Servving 
 # MAGIC <img src="./resources/build_6.png" alt="Assemble Agent" width="900"/>
 # MAGIC
 # MAGIC
-# MAGIC ### Code Based MLFlow Logging
-# MAGIC Databricks recommends that we use code-based MLFlow logging instead of Serialization based MLFlow logging.
+# MAGIC ### Code Based MLflow Logging
+# MAGIC Databricks recommends that we use code-based MLflow logging instead of Serialization based MLflow logging.
 # MAGIC
 # MAGIC **Code-based MLflow logging**: The chain’s code is captured as a Python file. The Python environment is captured as a list of packages. When the chain is deployed, the Python environment is restored, and the chain’s code is executed to load the chain into memory so it can be invoked when the endpoint is called.
 # MAGIC
@@ -259,8 +259,8 @@ results.metrics
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ####Check Results in MLFlow
-# MAGIC Now that the evaluation is done, we have all the runs captured in MLFlow experiment. Navigate to `Experiments` page and open the experiment named `carecost_compass_agent` and look at the evaluation results
+# MAGIC ####Check Results in MLflow
+# MAGIC Now that the evaluation is done, we have all the runs captured in MLflow experiment. Navigate to `Experiments` page and open the experiment named `carecost_compass_agent` and look at the evaluation results
 # MAGIC
 
 # COMMAND ----------
