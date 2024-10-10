@@ -1,25 +1,23 @@
 # Databricks notebook source
-# MAGIC %pip install -qU langchain-openai
-# MAGIC dbutils.library.restartPython()
-
-# COMMAND ----------
-
 # MAGIC %run "./05 a Create All Tools and Model"
 
 # COMMAND ----------
 
-from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain.agents import AgentExecutor, create_tool_calling_agent, create_react_agent
+from langchain.tools import tool
 from langchain_core.messages import AIMessage, HumanMessage
-from langchain_openai import ChatOpenAI
-
+from langchain import hub
 
 os.environ['DATABRICKS_HOST'] = db_host_url
 os.environ['DATABRICKS_TOKEN'] = db_token
 os.environ["OPENAI_API_KEY"] = dbutils.secrets.get("srijit_nair","openai")
 
+
+# COMMAND ----------
+
 class CareCostReactAgent:
     
-    max_tokens=4096
+    max_tokens=2000
     temperature=0.01
     invalid_question_category = {
         "PROFANITY": "Content has inappropriate language",
@@ -33,10 +31,7 @@ class CareCostReactAgent:
     agent_prompt = ChatPromptTemplate.from_messages(
     [
         ("system",
-            "You are a helpful assistant who can answer questions about medical procedure costs.\
-                Use tools to complete the request. \
-                    Call all the tools with appropriate input arguments.\
-                        In case of error, check the error message and correct the error and retry the tool call",
+            "You are a helpful assistant who can answer questions about medical procedure costs.",
         ),
         ("placeholder", "{chat_history}"),
         ("human", "{input}"),
@@ -93,9 +88,8 @@ class CareCostReactAgent:
         ]
 
         self.chat_model = ChatDatabricks(
-            endpoint=self.agent_chat_model_endpoint_name,
-            max_tokens = self.max_tokens,
-            temperature=self.temperature
+            endpoint=self.agent_chat_model_endpoint_name
+            
         )
         #self.chat_model = ChatOpenAI(model="gpt-3.5-turbo-0613")
 
@@ -112,9 +106,8 @@ class CareCostReactAgent:
 
     def answer(self, member_id:str ,input_question:str) -> str:
         return self.agent_executor.invoke({
-            "input": f"My member_id is {member_id}. {input_question}"
+            "input": f"My member_id is {member_id}, {input_question}"
         })
-
 
 
 

@@ -56,8 +56,8 @@ import json
 from typing import Optional, Type, List, Union
 
 from pydantic import BaseModel, Field
-
-from langchain.tools import BaseTool, StructuredTool, tool
+from langchain_core.tools import BaseTool
+#from langchain.tools import BaseTool, StructuredTool, tool
 from langchain.callbacks.manager import (AsyncCallbackManagerForToolRun, CallbackManagerForToolRun)
 from langchain.chat_models import ChatDatabricks
 from langchain.llms import Databricks
