@@ -42,7 +42,7 @@ master_run_info = mlflow.start_run(experiment_id=experiment.experiment_id,
 
 # COMMAND ----------
 
-mi = MemberIdRetriever("databricks-mixtral-8x7b-instruct")
+mi = MemberIdRetriever("databricks-mixtral-8x7b-instruct").get()
 mi.run({"question":"Member id is:1234."})
 
 # COMMAND ----------
@@ -69,7 +69,7 @@ categories_and_description = {
 qc = QuestionClassifier(
     model_endpoint_name="databricks-meta-llama-3-1-70b-instruct", 
     categories_and_description=categories_and_description
-    )
+    ).get()
 
 print(qc.run({"questions": ["What is the procedure cost for a shoulder mri","How many stars are there in galaxy"]}))
 
@@ -115,7 +115,7 @@ with mlflow.start_run(experiment_id=experiment.experiment_id,
             nested=True) as run:
 
             qc = QuestionClassifier(model_endpoint_name=model_name, 
-                                    categories_and_description=categories_and_description)
+                                    categories_and_description=categories_and_description).get()
             
             eval_fn = lambda data : qc.run({"questions":data["questions"].tolist()})
 
@@ -160,7 +160,9 @@ br = BenefitsRAG(model_endpoint_name="databricks-meta-llama-3-1-70b-instruct",
                  retriever_config=retriever_config
                  )
 
-print(br.run({"client_id":"sugarshack", "question":"How much does Xray of shoulder cost?"}))
+br_tool = br.get()
+
+print(br_tool.run({"client_id":"sugarshack", "question":"How much does Xray of shoulder cost?"}))
 
 br.retrieved_documents
 
@@ -224,6 +226,7 @@ with mlflow.start_run(experiment_id=experiment.experiment_id,
                                 retrieve_columns=["id","content"])
             
             br = BenefitsRAG(model_endpoint_name=model_name, retriever_config=retriever_config)
+            br_tool = br.get()
             
             tool_input_columns = ["question","client_id"]
             tool_result = []
@@ -231,7 +234,7 @@ with mlflow.start_run(experiment_id=experiment.experiment_id,
             for index, row in eval_data.iterrows():
                 input_dict = { col:row[col] for col in tool_input_columns}
                 print(f"Running tool with input: {input_dict}")
-                tool_result.append(br.run(input_dict))
+                tool_result.append(br_tool.run(input_dict))
                 tool_output.append(br.retrieved_documents)
 
             retrieved_documents = [
@@ -276,7 +279,7 @@ retriever_config = RetrieverConfig(vector_search_endpoint_name="care_cost_vs_end
                             vector_index_id_column="id",
                             retrieve_columns=["code","description"])
 
-pr = ProcedureRetriever(retriever_config)
+pr = ProcedureRetriever(retriever_config).get()
 pr.run({"question": "What is the procedure code for hip replacement?"})
 
 # COMMAND ----------
@@ -290,7 +293,7 @@ pr.run({"question": "What is the procedure code for hip replacement?"})
 
 # COMMAND ----------
 
-cid_lkup = ClientIdLookup(fq_member_table_name=f"{catalog}.{schema}.{member_table_name}")
+cid_lkup = ClientIdLookup(fq_member_table_name=f"{catalog}.{schema}.{member_table_name}").get()
 cid_lkup.run({"member_id": "1234"})
 
 # COMMAND ----------
@@ -304,7 +307,7 @@ cid_lkup.run({"member_id": "1234"})
 
 # COMMAND ----------
 
-pc_lkup = ProcedureCostLookup(fq_procedure_cost_table_name=f"{catalog}.{schema}.{procedure_cost_table_name}")
+pc_lkup = ProcedureCostLookup(fq_procedure_cost_table_name=f"{catalog}.{schema}.{procedure_cost_table_name}").get()
 pc_lkup.run({"procedure_code": "23920"})
 
 # COMMAND ----------
@@ -318,7 +321,7 @@ pc_lkup.run({"procedure_code": "23920"})
 
 # COMMAND ----------
 
-accum_lkup = MemberAccumulatorsLookup(fq_member_accumulators_table_name=f"{catalog}.{schema}.{member_accumulators_table_name}")
+accum_lkup = MemberAccumulatorsLookup(fq_member_accumulators_table_name=f"{catalog}.{schema}.{member_accumulators_table_name}").get()
 accum_lkup.run({"member_id": "1234"})
 
 # COMMAND ----------
@@ -347,15 +350,15 @@ retriever_config = RetrieverConfig(vector_search_endpoint_name="care_cost_vs_end
 
 br = BenefitsRAG(model_endpoint_name="databricks-meta-llama-3-1-70b-instruct", 
                  retriever_config=retriever_config
-                 )
+                 ).get()
                  
 benefit_str = br.run({"client_id":"sugarshack", "question":"How much does Xray of shoulder cost?"})
 benefit = Benefit.model_validate_json(benefit_str)
 
-accum_lkup = MemberAccumulatorsLookup(f"{catalog}.{schema}.{member_accumulators_table_name}")
+accum_lkup = MemberAccumulatorsLookup(f"{catalog}.{schema}.{member_accumulators_table_name}").get()
 accum_result = accum_lkup.run({"member_id": member_id})
 
-mcc = MemberCostCalculator()
+mcc = MemberCostCalculator().get()
 mcc.run({"benefit":benefit, 
          "procedure_cost":procedure_cost, 
          "member_deductibles": accum_result})
@@ -388,31 +391,24 @@ retriever_config = RetrieverConfig(vector_search_endpoint_name="care_cost_vs_end
 
 br = BenefitsRAG(model_endpoint_name="databricks-meta-llama-3-1-70b-instruct",
                  retriever_config=retriever_config
-                 )
+                 ).get()
 
 benefit_str = br.run({"client_id":"sugarshack", "question":"How much does Xray of shoulder cost?"})
 benefit = Benefit.model_validate_json(benefit_str)
 
-accum_lkup = MemberAccumulatorsLookup(f"{catalog}.{schema}.{member_accumulators_table_name}")
+accum_lkup = MemberAccumulatorsLookup(f"{catalog}.{schema}.{member_accumulators_table_name}").get()
 accum_result = accum_lkup.run({"member_id": member_id})
 
-mcc = MemberCostCalculator()
+mcc = MemberCostCalculator().get()
 
 cost_result = mcc.run({"benefit":benefit, 
          "procedure_cost":procedure_cost, 
          "member_deductibles": accum_result})
 
-rs = ResponseSummarizer("databricks-meta-llama-3-1-70b-instruct")
+rs = ResponseSummarizer("databricks-meta-llama-3-1-70b-instruct").get()
 summary = rs.run({"notes":cost_result.notes})
 
 print(summary)
-
-# COMMAND ----------
-
-rs1 = ResponseSummarizer("databricks-dbrx-instruct")
-summary1 = rs1.run({"notes":cost_result.notes})
-
-print(summary1)
 
 # COMMAND ----------
 
