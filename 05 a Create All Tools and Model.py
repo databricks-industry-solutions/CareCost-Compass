@@ -81,7 +81,18 @@ from databricks.vector_search.index import VectorSearchIndex
 
 # COMMAND ----------
 
-
+class BaseCareCostToolBuilder:
+    name:str = None
+    description:str = None
+    args_schema : Type[BaseModel] = None
+    def execute(self, **kwargs):
+        raise NotImplementedError("Please Implement this method")
+        
+    def get(self):
+        return StructuredTool.from_function(func=self.execute,
+                                            name=self.name,
+                                            description=self.description,
+                                            args_schema=self.args_schema)
 
 class RetrieverConfig(BaseModel):
     """A data class for passing around vector index configuration"""
@@ -152,9 +163,9 @@ class MemberIdRetrieverInput(BaseModel):
     """Data class for tool input"""
     question: str = Field(description="Sentence containing member_id")
 
-class  MemberIdRetriever(BaseTool):
+class  MemberIdRetriever(BaseCareCostToolBuilder):
     """A tool to extract member id from question"""
-    name : str = " MemberIdRetriever"
+    name : str = "MemberIdRetriever"
     description : str = "useful for extracting member id from question"
     args_schema : Type[BaseModel] = MemberIdRetrieverInput
     model_endpoint_name:str = None
@@ -169,19 +180,11 @@ class  MemberIdRetriever(BaseTool):
         self.model_endpoint_name = model_endpoint_name
     
     @mlflow.trace(name="get_member_id", span_type="func")
-    def get_member_id(self, question:str) -> str: 
+    def execute(self, question:str) -> str: 
         chain = build_api_chain(self.model_endpoint_name, self.prompt)
         category = chain.run(question=question)
         return category.strip()
     
-    def _run(self, question:str, run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
-        """Run the tool"""
-        return self.get_member_id(question)
-    
-    async def _arun(self, question:str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> str:
-        """Run the tool asynchronously"""
-        return self.get_member_id(question)
-
 
 # COMMAND ----------
 
@@ -199,7 +202,7 @@ class QuestionClassifierInput(BaseModel):
     """Data class for tool input"""
     questions: List[str] = Field(description="Question to be classified")
 
-class QuestionClassifier(BaseTool):
+class QuestionClassifier(BaseCareCostToolBuilder):
     """A tool to classify questions into categories"""
     name : str = "QuestionClassifier"
     description : str = "useful for classifying questions into categories"
@@ -221,18 +224,15 @@ class QuestionClassifier(BaseTool):
         self.category_str = "\n".join([ f"{c}:{self.categories_and_description[c]}" for c in self.categories_and_description])
     
     @mlflow.trace(name="get_question_category", span_type="func")
-    def get_question_category(self, question:str) -> str: 
+    def execute(self, questions:[str]) -> [str]: 
         chain = build_api_chain(self.model_endpoint_name, self.prompt)
-        category = chain.run(categories=self.category_str, question=question)
-        return category.strip()
-    
-    def _run(self, questions:[str], run_manager: Optional[CallbackManagerForToolRun] = None) -> [str]:
-        """Run the tool"""
-        return [self.get_question_category(question) for question in questions]
-    
-    async def _arun(self, questions:[str], run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> [str]:
-        """Run the tool asynchronously"""
-        return [self.get_question_category(question) for question in questions]
+        categories = []
+        for question in questions:
+            category = chain.run(categories=self.category_str, question=question)
+            categories.append(category.strip())
+        
+        return categories
+
     
 
 # COMMAND ----------
@@ -286,7 +286,7 @@ class Benefit(BaseModel):
     out_network_copay:float = Field(description="Out of Network copay amount. Set to -1 if not covered or has coinsurance")
     out_network_coinsurance:float = Field(description="Out of Network coinsurance amount without the % sign. Set to -1 if not covered or has copay")
     
-class BenefitsRAG(BaseTool):
+class BenefitsRAG(BaseCareCostToolBuilder):
     """Tool class implementing the benefits retriever"""
     name : str = "BenefitsRAG"
     description : str = "useful for retrieving benefits from a vector search index in json format"
@@ -309,7 +309,7 @@ class BenefitsRAG(BaseTool):
         self.retriever_config = retriever_config
         
     @mlflow.trace(name="get_benefits", span_type="func")
-    def get_benefits(self, client_id:str, question:str) -> str:
+    def execute(self, client_id:str, question:str) -> str:
 
         retriever = BenefitsRetriever(self.retriever_config)        
         self.retrieved_documents = None
@@ -331,13 +331,6 @@ class BenefitsRAG(BaseTool):
         else:
             raise Exception("No coverage found")
 
-    def _run(self, client_id:str, question:str,run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
-        """Run the tool"""
-        return self.get_benefits(client_id, question)
-    
-    async def _arun(self, client_id:str, question:str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> str:
-        """Run the tool asynchronously"""
-        return self.get_benefits(client_id, question)
 
 # COMMAND ----------
 
@@ -352,8 +345,7 @@ class ProcedureRetrieverInput(BaseModel):
     """Data class for tool input"""
     question: str = Field(description="Question for which the procedure need to be retrieved")
 
-#Expects DATABRICKS_TOKEN and DATABRICKS_HOST env vars
-class ProcedureRetriever(BaseTool):
+class ProcedureRetriever(BaseCareCostToolBuilder):
     """A retriever class to do Vector Index Search"""
     name : str = "ProcedureRetriever"
     description : str = "useful for retrieving an appropriate procedure code for the given question"
@@ -372,7 +364,7 @@ class ProcedureRetriever(BaseTool):
                                           index_name=self.retriever_config.vector_index_name)
 
     @mlflow.trace(name="get_procedure_details", span_type="func")
-    def get_procedure_details(self, question:str) -> (str,str):
+    def execute(self, question:str) -> (str,str):
         query_results = self.vector_index.similarity_search(
             query_text=question,
             columns=self.retriever_config.retrieve_columns,
@@ -383,14 +375,7 @@ class ProcedureRetriever(BaseTool):
             return (procedure_detail[0],procedure_detail[1])
         else:
             raise Exception("No procedure found.")
-                            
-    def _run(self, question:str,run_manager: Optional[CallbackManagerForToolRun] = None) -> (str,str):
-        """Run the tool"""
-        return self.get_procedure_details(question)
-    
-    async def _arun(self, question:str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> (str,str):
-        """Run the tool asynchronously"""
-        return self.get_procedure_details(question)
+
 
 # COMMAND ----------
 
@@ -405,7 +390,7 @@ class ClientIdLookupInput(BaseModel):
     """Data class for tool input"""
     member_id: str = Field(description="Member ID using which we need to lookup client id")
 
-class ClientIdLookup(BaseTool):    
+class ClientIdLookup(BaseCareCostToolBuilder):    
     """A class to do online table lookup to retrieve client_id gievn member_id"""
     name : str = "ClientIdLookup"
     description : str = "useful for retrieving a client id given a member id"
@@ -417,19 +402,12 @@ class ClientIdLookup(BaseTool):
         self.fq_member_table_name = fq_member_table_name
     
     @mlflow.trace(name="get_client_id", span_type="func")
-    def get_client_id(self, member_id:str) -> str:
+    def execute(self, member_id:str) -> str:
         member_data = get_data_from_online_table(self.fq_member_table_name, 
                                                  {"member_id":member_id})
         print(member_data)
         return member_data["outputs"][0]["client_id"]
 
-    def _run(self, member_id:str,run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
-        """Run the tool"""
-        return self.get_client_id(member_id)
-    
-    async def _arun(self, member_id:str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> str:
-        """Run the tool asynchronously"""
-        return self.get_client_id(member_id)
 
 # COMMAND ----------
 
@@ -446,7 +424,7 @@ class ProcedureCostLookupInput(BaseModel):
     """Data class for tool input"""
     procedure_code: str = Field(description="Procedure Code for which to find the cost")
 
-class ProcedureCostLookup(BaseTool):    
+class ProcedureCostLookup(BaseCareCostToolBuilder):    
     """A class to do online table lookup to retrieve procedure cost given procedure code"""
     name : str = "ProcedureCostLookup"
     description : str = "useful for retrieving the cost of a procedure given the procedure code"
@@ -458,18 +436,11 @@ class ProcedureCostLookup(BaseTool):
         self.fq_procedure_cost_table_name = fq_procedure_cost_table_name
     
     @mlflow.trace(name="get_procedure_cost", span_type="func")
-    def get_procedure_cost(self, procedure_code:str) -> float:
+    def execute(self, procedure_code:str) -> float:
         procedure_cost_data = get_data_from_online_table(self.fq_procedure_cost_table_name,
                                                          {"procedure_code":procedure_code})
         return procedure_cost_data["outputs"][0]["cost"]
 
-    def _run(self, procedure_code:str,run_manager: Optional[CallbackManagerForToolRun] = None) -> float:
-        """Run the tool"""
-        return self.get_procedure_cost(procedure_code)
-    
-    async def _arun(self, procedure_code:str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> float:
-        """Run the tool asynchronously"""
-        return self.get_procedure_cost(procedure_code)
 
 # COMMAND ----------
 
@@ -485,7 +456,7 @@ class MemberAccumulatorsLookupInput(BaseModel):
     """Data class for tool input"""
     member_id: str = Field(description="Member Id for which we need to lookup the accumulators")
 
-class MemberAccumulatorsLookup(BaseTool):    
+class MemberAccumulatorsLookup(BaseCareCostToolBuilder):    
     """A class to do online table lookup to retrieve member accumulators given member id"""
     name : str = "MemberAccumulatorsLookup"
     description : str = "useful for retrieving the accumulators like deductibles given a member id"
@@ -497,18 +468,11 @@ class MemberAccumulatorsLookup(BaseTool):
         self.fq_member_accumulators_table_name = fq_member_accumulators_table_name
     
     @mlflow.trace(name="get_member_accumulators", span_type="func")
-    def get_member_accumulators(self, member_id:str) -> dict[str, Union[float,str] ]:
+    def execute(self, member_id:str) -> dict[str, Union[float,str] ]:
         accumulator_data = get_data_from_online_table(self.fq_member_accumulators_table_name,
                                                       {"member_id":member_id})
         return accumulator_data["outputs"][0]
 
-    def _run(self, member_id:str,run_manager: Optional[CallbackManagerForToolRun] = None) -> dict[str, Union[float,str] ]:
-        """Run the tool"""
-        return self.get_member_accumulators(member_id)
-    
-    async def _arun(self, member_id:str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> dict[str, Union[float,str] ]:
-        """Run the tool asynchronously"""
-        return self.get_member_accumulators(member_id)
 
 # COMMAND ----------
 
@@ -534,7 +498,7 @@ class MemberCostCalculatorInput(BaseModel):
   member_deductibles:dict[str, Union[float,str] ] = Field(description="Accumulators for the member")
 
 
-class MemberCostCalculator(BaseTool):
+class MemberCostCalculator(BaseCareCostToolBuilder):
     """A class to calculate the member out of pocket cost given the benefits, procedure cost and deductibles"""
     name : str = "MemberCostCalculator"
     description : str = "calculates the estimated member out of pocket cost given the benefits, procedure cost and deductibles"
@@ -544,10 +508,10 @@ class MemberCostCalculator(BaseTool):
         super().__init__()
 
     @mlflow.trace(name="get_member_out_of_pocket_cost", span_type="func")
-    def get_member_out_of_pocket_cost(self, 
-                                    benefit:Benefit,
-                                    procedure_cost:float,
-                                    member_deductibles:dict[str, Union[float,str] ]) -> MemberCost:
+    def execute(self, 
+                  benefit:Benefit,
+                  procedure_cost:float,
+                  member_deductibles:dict[str, Union[float,str] ]) -> MemberCost:
         """
         Method to get estimated member out of pocket cost
         """
@@ -601,21 +565,6 @@ class MemberCostCalculator(BaseTool):
         member_cost = MemberCost(in_network_cost=in_network_cost, out_network_cost=out_network_cost, notes=notes)
         return member_cost
 
-    def _run(self,
-             benefit:Benefit,
-             procedure_cost:float,
-             member_deductibles:dict[str, Union[float,str] ],
-             run_manager: Optional[CallbackManagerForToolRun] = None) -> MemberCost:
-        """Run the tool"""
-        return self.get_member_out_of_pocket_cost(benefit,procedure_cost,member_deductibles)
-    
-    async def _arun(self,
-             benefit:Benefit,
-             procedure_cost:float,
-             member_deductibles:dict[str, Union[float,str] ],
-             run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> MemberCost:
-        """Run the tool asynchronously"""
-        return self.get_member_out_of_pocket_cost(benefit,procedure_cost,member_deductibles)
 
 # COMMAND ----------
 
@@ -630,7 +579,7 @@ class MemberCostCalculator(BaseTool):
 class ResponseSummarizerInput(BaseModel):
     notes:List[str] = Field(description="MemberCost object for the member")    
 
-class ResponseSummarizer(BaseTool):
+class ResponseSummarizer(BaseCareCostToolBuilder):
     name : str = "ResponseSummarizer"
     description : str = "useful for summarizing the response of the member cost calculation"
     args_schema : Type[BaseModel] = ResponseSummarizerInput
@@ -645,16 +594,11 @@ class ResponseSummarizer(BaseTool):
         self.model_endpoint_name = model_endpoint_name
     
     @mlflow.trace(name="summarize", span_type="func")
-    def summarize(self,  notes:List[str]) -> str: 
+    def execute(self,  notes:List[str]) -> str: 
         chain = build_api_chain(self.model_endpoint_name, self.prompt)
         summary = chain.run(notes="\n\n".join(notes))
         return summary.strip()
-    
-    def _run(self, notes:List[str], run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
-        return self.summarize(notes)
-    
-    async def _arun(self, notes:List[str], run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> str:
-        return self.summarize(notes)
+
 
 # COMMAND ----------
 
@@ -774,22 +718,22 @@ class CareCostCompassAgent(PythonModel):
 
     #Start instantiating tools                                    
     self.question_classifier = QuestionClassifier(model_endpoint_name=self.question_classifier_model_endpoint_name,
-                            categories_and_description=self.invalid_question_category)
+                            categories_and_description=self.invalid_question_category).get()
     
-    self.client_id_lookup = ClientIdLookup(fq_member_table_name=self.member_table_name)
+    self.client_id_lookup = ClientIdLookup(fq_member_table_name=self.member_table_name).get()
     
     self.benefit_rag = BenefitsRAG(model_endpoint_name=self.benefit_retriever_model_endpoint_name,
-                              retriever_config=self.benefit_retriever_config)
+                              retriever_config=self.benefit_retriever_config).get()
     
-    self.procedure_code_retriever = ProcedureRetriever(retriever_config=self.procedure_code_retriever_config)
+    self.procedure_code_retriever = ProcedureRetriever(retriever_config=self.procedure_code_retriever_config).get()
 
-    self.procedure_cost_lookup = ProcedureCostLookup(fq_procedure_cost_table_name=self.procedure_cost_table_name)
+    self.procedure_cost_lookup = ProcedureCostLookup(fq_procedure_cost_table_name=self.procedure_cost_table_name).get()
 
-    self.member_accumulator_lookup = MemberAccumulatorsLookup(fq_member_accumulators_table_name=self.member_accumulators_table_name)
+    self.member_accumulator_lookup = MemberAccumulatorsLookup(fq_member_accumulators_table_name=self.member_accumulators_table_name).get()
 
-    self.member_cost_calculator = MemberCostCalculator()
+    self.member_cost_calculator = MemberCostCalculator().get()
 
-    self.summarizer = ResponseSummarizer(model_endpoint_name=self.summarizer_model_endpoint_name)
+    self.summarizer = ResponseSummarizer(model_endpoint_name=self.summarizer_model_endpoint_name).get()
   
   #we will create three flows that can run parallely
   async def __benefit_flow(self, member_id:str, question:str) -> Benefit:
