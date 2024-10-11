@@ -57,7 +57,7 @@ To run this demo in a Databricks Workspace, follow the below steps
 3. Open the `utils/init` notebook and update the values in `Cmd 4` appropriately
 4. Start by running notebooks `01 Setup Data` to `06 b Building Evaluation Dataframe using Review App  Data` sequentially. Follow along the documentation in the notebooks
 
-###Copyright/License Info
+### Copyright/License Info
 Copyright Databricks, Inc. [2024]. The source in this notebook is provided subject to the [Databricks License](https://databricks.com/db-license-source). 
 All databricks packages used is subject to the [Databricks License](https://databricks.com/db-license-source). 
 All included or referenced third party libraries are subject to the licenses set forth below.
