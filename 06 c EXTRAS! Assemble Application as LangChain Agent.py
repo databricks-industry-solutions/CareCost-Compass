@@ -180,6 +180,17 @@ def get_model_config(db_host_url:str,
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC Let us create an External Model endpoint to use an Open AI `gpt 4o` model as our Agent Orchestrator.
+# MAGIC
+# MAGIC External models are third-party models hosted outside of Databricks. Supported by Model Serving, external models allow you to streamline the usage and management of various large language model (LLM) providers, such as OpenAI and Anthropic, within an organization. You can also use Mosaic AI Model Serving as a provider to serve custom models, which offers rate limits for those endpoints. As part of this support, Model Serving offers a high-level interface that simplifies the interaction with these services by providing a unified endpoint to handle specific LLM-related requests.
+# MAGIC
+# MAGIC See Tutorial: [Create external model endpoints to query OpenAI models](https://docs.databricks.com/en/generative-ai/tutorials/external-models-tutorial.html) for step-by-step guidance on external model endpoint creation and querying supported models served by those endpoints using the MLflow Deployments SDK.
+# MAGIC
+# MAGIC Let us name the model endpoint `carecost_openai_endpoint`
+
+# COMMAND ----------
+
 
 care_cst_agent = CareCostReactAgent(model_config=get_model_config(db_host_url=db_host_url,
                                 environment="dev",
@@ -195,7 +206,7 @@ care_cst_agent = CareCostReactAgent(model_config=get_model_config(db_host_url=db
                                 cpt_code_table_name=cpt_code_table_name,
                                 cpt_code_id_column="id",
                                 cpt_code_retrieve_columns=["code","description"],
-                                agent_chat_model_endpoint_name="srijit_nair_openai" ,# "databricks-meta-llama-3-1-405b-instruct",
+                                agent_chat_model_endpoint_name="carecost_openai_endpoint",  #<< The external open AI endpoint
                                 member_id_retriever_model_endpoint_name="databricks-mixtral-8x7b-instruct",
                                 question_classifier_model_endpoint_name="databricks-meta-llama-3-1-70b-instruct",
                                 benefit_retriever_model_endpoint_name= "databricks-meta-llama-3-1-70b-instruct",
