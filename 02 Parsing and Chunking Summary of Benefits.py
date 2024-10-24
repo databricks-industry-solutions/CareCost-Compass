@@ -103,9 +103,10 @@ def get_coverage(pdf_name : str, summary_page = True) -> pd.DataFrame :
     #clien1 pdf has two header lines we need to skip
     #client2 pdf has an extra example tables at the end we need to skip
     skip_lines = 2 if "client1" in pdf_name else 1
-    skip_tables = 4 if "client2" in pdf_name else 2
+    skip_tables = 8 if "client2" in pdf_name else 2
 
     tables = camelot.read_pdf(pdf_name,pages="2-end" if summary_page else "1-end")
+
     page_df_list = [table.df for table in tables]
     
     #we also need to process the excluded services and other covered services differently
@@ -114,6 +115,9 @@ def get_coverage(pdf_name : str, summary_page = True) -> pd.DataFrame :
 
     #format covered services
     page_df = pd.concat([df.tail(-skip_lines) for df in covered_services])
+    if "client2" in pdf_name :
+        page_df = page_df.drop(3, axis=1)
+
     page_df_formatted = format_coverage_page(page_df, skip_lines)
     
     return page_df_formatted
@@ -126,7 +130,7 @@ def get_coverage(pdf_name : str, summary_page = True) -> pd.DataFrame :
 # COMMAND ----------
 
 #lets test our methods
-pdf_name = f"{sbc_folder_path}/SBC_client1.pdf"
+pdf_name = f"{sbc_folder_path}/SBC_client2.pdf"
 display(get_summary(pdf_name))
 
 # COMMAND ----------
