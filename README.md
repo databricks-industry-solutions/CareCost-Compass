@@ -64,14 +64,10 @@ All included or referenced third party libraries are subject to the licenses set
 
 | Library Name |Library License|Library License URL|
 ---------------|---------------|-------------------|
-|Ghostscript|Open Source – AGPL|https://www.ghostscript.com/licensing/index.html#open-source|
 |opencv-python|MIT license|https://pypi.org/project/opencv-python/|
 |camelot-py|MIT License|https://camelot-py.readthedocs.io/en/master/user/intro.html#camelot-license|
 |typing| Python Software Foundation License|https://github.com/python/typing/blob/main/LICENSE|
 |MLflow| Apache License 2.0| https://github.com/mlflow/mlflow/blob/master/LICENSE.txt|
 |LangChain| MIT License| https://github.com/langchain-ai/langchain/blob/master/LICENSE|
-
-
-
 
 

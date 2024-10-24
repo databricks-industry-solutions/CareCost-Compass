@@ -53,6 +53,8 @@
 # MAGIC
 # MAGIC **NOTE:** Camelot only works with text-based PDFs and not scanned documents. For processing scanned PDF documents, we might have to change the PDF reading library
 # MAGIC
+# MAGIC **NOTE:** The `lattice` mode of Camelot relies on having a PDF rendering backend like `GhostScript` or `Poppler`. Please follow the [instructions](https://camelot-py.readthedocs.io/en/master/user/install-deps.html) and install the appropriate backend. If you wish to create a custom backend and use it, please follow [this documentation](https://camelot-py.readthedocs.io/en/master/user/advanced.html#use-alternate-image-conversion-backends). 
+# MAGIC
 
 # COMMAND ----------
 
