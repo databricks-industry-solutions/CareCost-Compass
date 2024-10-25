@@ -70,6 +70,7 @@ All included or referenced third party libraries are subject to the licenses set
 ---------------|---------------|-------------------|
 |opencv-python|MIT license|https://pypi.org/project/opencv-python/|
 |camelot-py|MIT License|https://camelot-py.readthedocs.io/en/master/user/intro.html#camelot-license|
+|pdfplumber|MIT License|https://github.com/jsvine/pdfplumber/blob/stable/pdfplumber/page.py|
 |typing| Python Software Foundation License|https://github.com/python/typing/blob/main/LICENSE|
 |MLflow| Apache License 2.0| https://github.com/mlflow/mlflow/blob/master/LICENSE.txt|
 |LangChain| MIT License| https://github.com/langchain-ai/langchain/blob/master/LICENSE|
