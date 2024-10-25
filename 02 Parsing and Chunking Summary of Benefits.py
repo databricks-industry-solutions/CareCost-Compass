@@ -130,13 +130,16 @@ def get_coverage(pdf_name : str, summary_page = True) -> pd.DataFrame :
 # COMMAND ----------
 
 #lets test our methods
+"""  Uncomment this with a PDF backend library installed
 pdf_name = f"{sbc_folder_path}/SBC_client2.pdf"
 display(get_summary(pdf_name))
+"""
 
 # COMMAND ----------
 
+"""  Uncomment this with a PDF backend library installed
 display(get_coverage(pdf_name))
-
+"""
 
 # COMMAND ----------
 
@@ -211,7 +214,9 @@ sbc_details = (spark
 
 # COMMAND ----------
 
+"""  Uncomment this with a PDF backend library installed
 display(sbc_details)
+"""
 
 # COMMAND ----------
 
