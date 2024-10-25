@@ -16,7 +16,7 @@
 # MAGIC * A pythom function to calculate out of pocket cost given the information from the previous steps
 # MAGIC * A summarizer to summarize the calculation in a professional manner ans send it to the user
 # MAGIC
-# MAGIC While develpoing Agentic Applications, thse functions will be developed as **Tools ** so that the Agent Executor can use them to process the user request. 
+# MAGIC While develpoing Agentic Applications, thse functions will be developed as **Tools** so that the Agent Executor can use them to process the user request. 
 # MAGIC
 # MAGIC In this notebook we will develop thse functions as LangChain [tools](https://python.langchain.com/v0.1/docs/modules/tools/), so that we can potentially use these tools in a LangChain agent.
 # MAGIC
