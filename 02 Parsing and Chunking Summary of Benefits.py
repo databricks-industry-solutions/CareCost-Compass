@@ -53,7 +53,7 @@
 # MAGIC
 # MAGIC **NOTE:** Camelot only works with text-based PDFs and not scanned documents. For processing scanned PDF documents, we might have to change the PDF reading library
 # MAGIC
-# MAGIC **NOTE:** The `lattice` mode of Camelot relies on having a PDF rendering backend like `GhostScript` or `Poppler`. Please follow the [instructions](https://camelot-py.readthedocs.io/en/master/user/install-deps.html) and install the appropriate backend. If you wish to create a custom backend and use it, please follow [this documentation](https://camelot-py.readthedocs.io/en/master/user/advanced.html#use-alternate-image-conversion-backends). 
+# MAGIC **NOTE:** The `lattice` mode of Camelot relies on having a PDF rendering backend. Here we will create a custom backend using `pdfplumber` library. If you wish to install other backends like `GhostScript` or `Poppler`. Please follow the [instructions](https://camelot-py.readthedocs.io/en/master/user/install-deps.html) and install the appropriate backend. 
 # MAGIC
 
 # COMMAND ----------
@@ -78,10 +78,20 @@
 
 import pandas as pd
 import camelot
+import pdfplumber
+
+#lets create a custom backend for camelot to convert pdf to png
+class SBCConversionBackend(object):
+    def convert(self,pdf_path, png_path):
+        pdf = pdfplumber.open(pdf_path)
+        pdf.pages[0].to_image(resolution=600).save(png_path)
 
 def get_summary(pdf_name : str) -> pd.DataFrame :
     #assuming first page is summary
-    tables = camelot.read_pdf(pdf_name,pages="1")
+    tables = camelot.read_pdf(pdf_name,
+                              pages="1",
+                              backend=SBCConversionBackend(),
+                              flavor="lattice")
     summary_df = tables[0].df
     summary_df = summary_df.tail(-1)
     summary_df.columns= ["Questions","Answer","Why this matters"] 
@@ -105,7 +115,10 @@ def get_coverage(pdf_name : str, summary_page = True) -> pd.DataFrame :
     skip_lines = 2 if "client1" in pdf_name else 1
     skip_tables = 8 if "client2" in pdf_name else 2
 
-    tables = camelot.read_pdf(pdf_name,pages="2-end" if summary_page else "1-end")
+    tables = camelot.read_pdf(pdf_name,
+                              pages="2-end" if summary_page else "1-end",                              
+                              backend=SBCConversionBackend(),
+                              flavor="lattice")
 
     page_df_list = [table.df for table in tables]
     
@@ -115,9 +128,6 @@ def get_coverage(pdf_name : str, summary_page = True) -> pd.DataFrame :
 
     #format covered services
     page_df = pd.concat([df.tail(-skip_lines) for df in covered_services])
-    if "client2" in pdf_name :
-        page_df = page_df.drop(3, axis=1)
-
     page_df_formatted = format_coverage_page(page_df, skip_lines)
     
     return page_df_formatted
