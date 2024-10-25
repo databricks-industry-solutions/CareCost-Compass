@@ -59,7 +59,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #####Install other libraries and import utility methods
+# MAGIC #####Import utility methods
 
 # COMMAND ----------
 
@@ -140,16 +140,13 @@ def get_coverage(pdf_name : str, summary_page = True) -> pd.DataFrame :
 # COMMAND ----------
 
 #lets test our methods
-"""  Uncomment this with a PDF backend library installed
 pdf_name = f"{sbc_folder_path}/SBC_client2.pdf"
 display(get_summary(pdf_name))
-"""
+
 
 # COMMAND ----------
 
-"""  Uncomment this with a PDF backend library installed
 display(get_coverage(pdf_name))
-"""
 
 # COMMAND ----------
 
@@ -224,9 +221,7 @@ sbc_details = (spark
 
 # COMMAND ----------
 
-"""  Uncomment this with a PDF backend library installed
 display(sbc_details)
-"""
 
 # COMMAND ----------
 
@@ -241,7 +236,3 @@ sbc_details.write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.{sbc_detail
 # COMMAND ----------
 
 display(spark.table(f"{catalog}.{schema}.{sbc_details_table_name}"))
-
-# COMMAND ----------
-
-
