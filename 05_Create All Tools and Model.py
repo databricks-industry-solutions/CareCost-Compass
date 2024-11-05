@@ -327,7 +327,7 @@ class BenefitsRAG(BaseCareCostToolBuilder):
 
             answer = qa_chain.invoke({"context": coverage_records,
                                "pydantic_parser_format_instruction": parser.get_format_instructions()})
-            return answer# Benefit.model_validate_json(answer)
+            return answer.replace('`','')# Benefit.model_validate_json(answer)
         else:
             raise Exception("No coverage found")
 

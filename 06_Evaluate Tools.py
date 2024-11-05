@@ -394,7 +394,7 @@ br = BenefitsRAG(model_endpoint_name="databricks-meta-llama-3-1-70b-instruct",
                  ).get()
 
 benefit_str = br.run({"client_id":"sugarshack", "question":"How much does Xray of shoulder cost?"})
-benefit = Benefit.model_validate_json(benefit_str)
+benefit = Benefit.model_validate_json(benefit_str.strip())
 
 accum_lkup = MemberAccumulatorsLookup(f"{catalog}.{schema}.{member_accumulators_table_name}").get()
 accum_result = accum_lkup.run({"member_id": member_id})

@@ -318,7 +318,7 @@ with mlflow.start_run(experiment_id=experiment.experiment_id,
 
     mlflow.pyfunc.log_model(
         artifact_path="model",
-        python_model=f"/Workspace/{project_root_path}/05 a Create All Tools and Model",
+        python_model=f"/Workspace/{project_root_path}/05_Create All Tools and Model",
         artifacts={},
         model_config=model_config,
         pip_requirements=["mlflow==2.16.2",
