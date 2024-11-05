@@ -77,7 +77,7 @@ try:
     time.sleep(5)
 
     vsc.wait_for_endpoint(name=vector_search_endpoint_name,
-                                timeout=timedelta(minutes=30),
+                                timeout=timedelta(minutes=60),
                                 verbose=True)
     
     print(f"Endpoint named {vector_search_endpoint_name} is ready.")
