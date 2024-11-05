@@ -15,7 +15,7 @@
 
 # COMMAND ----------
 
-# MAGIC %run "./05 a Create All Tools and Model"
+# MAGIC %run "./05_Create All Tools and Model"
 
 # COMMAND ----------
 
