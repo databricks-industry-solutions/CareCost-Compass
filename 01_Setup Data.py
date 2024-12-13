@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC #Prepare Data
 # MAGIC ###### Let us start by creating some synthetic data to work with.
-# MAGIC <img src="./resources/build_1.png" alt="Prepare Data" width="900" style="border:2px;"/>
+# MAGIC <img src="https://raw.githubusercontent.com/databricks-industry-solutions/CareCost-Compass/refs/heads/main/resources/build_1.png" alt="Prepare Data" width="900" style="border:2px;"/>
 # MAGIC
 # MAGIC
 # MAGIC

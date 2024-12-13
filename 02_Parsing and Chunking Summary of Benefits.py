@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC # Parsing and Chunking Summary of benefits
 # MAGIC ######Next step of our building process is to build the the Summary of Benefit Parsing and implement an appropriate chunking strategy.
-# MAGIC <img src="./resources/build_2.png" alt="Parse and Chunk" width="900"/>
+# MAGIC <img src="https://raw.githubusercontent.com/databricks-industry-solutions/CareCost-Compass/refs/heads/main/resources/build_2.png" alt="Parse and Chunk" width="900"/>
 # MAGIC
 
 # COMMAND ----------
@@ -14,16 +14,16 @@
 # MAGIC
 # MAGIC First page is the summary of coverage as shown below
 # MAGIC
-# MAGIC <img src="./resources/img_summary.png" alt="drawing" width="700"/>
+# MAGIC <img src="https://raw.githubusercontent.com/databricks-industry-solutions/CareCost-Compass/refs/heads/main/resources/img_summary.png" alt="drawing" width="700"/>
 # MAGIC
 # MAGIC Remaining pages has the details of coverage as shown below
 # MAGIC
-# MAGIC <img src="./resources/img_details.png" alt="drawing" width="700"/>
+# MAGIC <img src="https://raw.githubusercontent.com/databricks-industry-solutions/CareCost-Compass/refs/heads/main/resources/img_details.png" alt="drawing" width="700"/>
 # MAGIC
 # MAGIC Our aim is to extract this tabular data from PDF and create full text summary of each line item so that it captures the details appropriately. Below is an example
 # MAGIC
 # MAGIC For the line item
-# MAGIC <img src="./resources/img_line.png" alt="drawing" width="700"/> we want to generate two paragraphs as below 
+# MAGIC <img src="https://raw.githubusercontent.com/databricks-industry-solutions/CareCost-Compass/refs/heads/main/resources/img_line.png" alt="drawing" width="700"/> we want to generate two paragraphs as below 
 # MAGIC
 # MAGIC **If you have a test, for Diagnostic test (x-ray, blood work) you will pay $10 copay/test In Network and 40% coinsurance Out of Network.**
 # MAGIC

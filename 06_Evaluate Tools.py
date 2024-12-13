@@ -25,7 +25,7 @@
 # MAGIC
 # MAGIC **NOTE:** For the sake of simplicity, we are performing full evaluation only on few tools. But we can extend the same concept to all the tools being used.
 # MAGIC
-# MAGIC <img src="./resources/star.png" width="40">Also see MLflow Tracing in action in the results section after you execute each command
+# MAGIC <img src="https://raw.githubusercontent.com/databricks-industry-solutions/CareCost-Compass/refs/heads/main/resources/star.png" width="40">Also see MLflow Tracing in action in the results section after you execute each command
 
 # COMMAND ----------
 
@@ -427,22 +427,22 @@ mlflow.end_run()
 # MAGIC Now we can view all the evaluation runs in the experiment. Navigate to `Experiments` page and select the `carecost_compass_agent` experiment.
 # MAGIC You can see the tool evaluation runs grouped as below
 # MAGIC
-# MAGIC <img src="./resources/tool_eval_1.png">
+# MAGIC <img src="https://raw.githubusercontent.com/databricks-industry-solutions/CareCost-Compass/refs/heads/main/resources/tool_eval_1.png">
 # MAGIC
 # MAGIC **You can click open each run and view traces and databricks-agent evaluation results**
 # MAGIC
 # MAGIC ######Traces
-# MAGIC <img src="./resources/tool_eval_traces_dbrx.png">
+# MAGIC <img src="https://raw.githubusercontent.com/databricks-industry-solutions/CareCost-Compass/refs/heads/main/resources/tool_eval_traces_dbrx.png">
 # MAGIC
 # MAGIC
 # MAGIC ######Evaluation Results
-# MAGIC <img src="./resources/tool_eval_rag_dbrx.png">
+# MAGIC <img src="https://raw.githubusercontent.com/databricks-industry-solutions/CareCost-Compass/refs/heads/main/resources/tool_eval_rag_dbrx.png">
 # MAGIC
 # MAGIC ######Detailed Assesments
 # MAGIC You can now click open each input and see detailed assesments for each result
-# MAGIC <img src="./resources/tool_eval_rag_details_1.png">
+# MAGIC <img src="https://raw.githubusercontent.com/databricks-industry-solutions/CareCost-Compass/refs/heads/main/resources/tool_eval_rag_details_1.png">
 # MAGIC
-# MAGIC <img src="./resources/tool_eval_rag_details_2.png">
+# MAGIC <img src="https://raw.githubusercontent.com/databricks-industry-solutions/CareCost-Compass/refs/heads/main/resources/tool_eval_rag_details_2.png">
 # MAGIC
 # MAGIC
 

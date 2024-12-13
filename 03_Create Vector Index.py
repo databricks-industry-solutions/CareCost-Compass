@@ -11,7 +11,7 @@
 # MAGIC ### Vector Indexes
 # MAGIC Let us start creating vector indexes
 # MAGIC
-# MAGIC <img src="./resources/build_3.png" alt="Vector Indexes" width="900"/>
+# MAGIC <img src="https://raw.githubusercontent.com/databricks-industry-solutions/CareCost-Compass/refs/heads/main/resources/build_3.png" alt="Vector Indexes" width="900"/>
 # MAGIC
 # MAGIC We will be creating two vector indexes for this project.
 # MAGIC 1. Vector Index for the parsed Summary of Benefits and Coverage chunks

@@ -10,7 +10,7 @@
 # MAGIC
 # MAGIC Let us now create the required Online Tables
 # MAGIC
-# MAGIC <img src="./resources/build_4.png" alt="Online Tables" width="900"/>
+# MAGIC <img src="https://raw.githubusercontent.com/databricks-industry-solutions/CareCost-Compass/refs/heads/main/resources/build_4.png" alt="Online Tables" width="900"/>
 # MAGIC
 # MAGIC We will be needing online tables for our `member_enrolment`, `member_accumulatord` and `procedure_cost` table.
 
@@ -54,7 +54,7 @@ create_feature_serving(f"{catalog}.{schema}.{member_accumulators_table_name}", [
 # MAGIC ##NOTE Online table endpoints takes few minutes to be provisioned and available.
 # MAGIC Please make sure that the endpoints are ready before proceeding further, by check the status in `Serving` page as below
 # MAGIC
-# MAGIC <img src="./resources/online_endpoint.png" width="800" />
+# MAGIC <img src="https://raw.githubusercontent.com/databricks-industry-solutions/CareCost-Compass/refs/heads/main/resources/online_endpoint.png" width="800" />
 
 # COMMAND ----------
 

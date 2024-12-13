@@ -22,7 +22,7 @@
 # MAGIC
 # MAGIC **NOTE:** In a real enterprise application many of these tools could be complex functions or REST api calls to other services. The scope of this notebook is to illustrate the feature and can be extended any way possible.
 # MAGIC
-# MAGIC <img src="./resources/build_5.png" alt="Create Tools" width="900" />
+# MAGIC <img src="https://raw.githubusercontent.com/databricks-industry-solutions/CareCost-Compass/refs/heads/main/resources/build_5.png" alt="Create Tools" width="900" />
 
 # COMMAND ----------
 
@@ -606,7 +606,7 @@ class ResponseSummarizer(BaseCareCostToolBuilder):
 # MAGIC #Assemble the Care Cost Compass Application
 # MAGIC
 # MAGIC ####Now it's time to assemble all the components that we have built so far and build the Agent. 
-# MAGIC <img src="./resources/build_6.png" alt="Assemble Agent" width="900"/>
+# MAGIC <img src="https://raw.githubusercontent.com/databricks-industry-solutions/CareCost-Compass/refs/heads/main/resources/build_6.png" alt="Assemble Agent" width="900"/>
 # MAGIC
 # MAGIC Since we made our components as LangChain Tools, we can use an AgentExecutor to run the process. 
 # MAGIC
@@ -665,7 +665,7 @@ def log_print(msg):
 # MAGIC ####Workflow
 # MAGIC We will implement the below workflow in the `predict` method of pyfunc model.
 # MAGIC
-# MAGIC <img src="./resources/logic_workflow.png" width="700">
+# MAGIC <img src="https://raw.githubusercontent.com/databricks-industry-solutions/CareCost-Compass/refs/heads/main/resources/logic_workflow.png" width="700">
 
 # COMMAND ----------
 
@@ -902,4 +902,5 @@ class CareCostCompassAgent(PythonModel):
 
 # COMMAND ----------
 
+## Tell MLflow logging where to find your chain.
 mlflow.models.set_model(model=CareCostCompassAgent())

@@ -3,7 +3,7 @@
 # MAGIC #Let's Deploy The Agent
 # MAGIC
 # MAGIC ####Now it's time to log the model into MLflow and deploy it into Mosaic AI Model Servving 
-# MAGIC <img src="./resources/build_6.png" alt="Assemble Agent" width="900"/>
+# MAGIC <img src="https://raw.githubusercontent.com/databricks-industry-solutions/CareCost-Compass/refs/heads/main/resources/build_6.png" alt="Assemble Agent" width="900"/>
 # MAGIC
 # MAGIC
 # MAGIC ### Code Based MLflow Logging
