@@ -47,7 +47,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install git+https://github.com/databricks-industry-solutions/industry-solutions-release@fix-databricks-sdk
+          pip install git+https://github.com/databricks-industry-solutions/industry-solutions-release
 
       - name: Package solution accelerator
         run: |
