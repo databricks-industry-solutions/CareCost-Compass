@@ -47,7 +47,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install git+https://github.com/databricks-industry-solutions/industry-solutions-release
+          pip install git+https://github.com/databricks-industry-solutions/industry-solutions-release@debug-demo-failure
 
       - name: Package solution accelerator
         run: |
