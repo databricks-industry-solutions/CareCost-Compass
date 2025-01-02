@@ -108,8 +108,8 @@ test_model_config = get_model_config(environment="dev",
                                 cpt_code_table_name=cpt_code_table_name,
                                 cpt_code_id_column="id",
                                 cpt_code_retrieve_columns=["code","description"],
-                                question_classifier_model_endpoint_name="databricks-meta-llama-3-1-70b-instruct",
-                                benefit_retriever_model_endpoint_name= "databricks-meta-llama-3-1-70b-instruct",
+                                question_classifier_model_endpoint_name="databricks-meta-llama-3-3-70b-instruct",
+                                benefit_retriever_model_endpoint_name= "databricks-meta-llama-3-3-70b-instruct",
                                 summarizer_model_endpoint_name="databricks-dbrx-instruct",                       
                                 default_parameter_json_string='{"member_id":"1234"}')
 
@@ -161,7 +161,7 @@ display_results(model_output_bad["content"])
 # MAGIC We will follow the Databricks recommended [Evaluation Driven Development](https://docs.databricks.com/en/generative-ai/tutorials/ai-cookbook/evaluation-driven-development.html) workflow. Having a quick PoC agent ready, we will 
 # MAGIC * Benchmark by running an evaluation
 # MAGIC * Deploy the agent application
-# MAGIC * Collect staje-holder feedback 
+# MAGIC * Collect stake-holder feedback 
 # MAGIC * Iteratively improve model quality with the data from feedback
 
 # COMMAND ----------
@@ -311,8 +311,8 @@ with mlflow.start_run(experiment_id=experiment.experiment_id,
                     cpt_code_table_name=cpt_code_table_name,
                     cpt_code_id_column="id",
                     cpt_code_retrieve_columns=["code","description"],
-                    question_classifier_model_endpoint_name="databricks-meta-llama-3-1-70b-instruct",
-                    benefit_retriever_model_endpoint_name= "databricks-meta-llama-3-1-70b-instruct",
+                    question_classifier_model_endpoint_name="databricks-meta-llama-3-3-70b-instruct",
+                    benefit_retriever_model_endpoint_name= "databricks-meta-llama-3-3-70b-instruct",
                     summarizer_model_endpoint_name="databricks-dbrx-instruct",                       
                     default_parameter_json_string='{"member_id":"1234"}')
 
@@ -425,7 +425,7 @@ result = score_model(serving_endpoint_url=serving_endpoint_url,
                      dataset=pd.DataFrame([{
                         "messages" : [
                             {"content":"member_id:1234","role":"system" },
-                            {"content":"an mri of shoulder is needed. How much will it cost me?","role":"user" }
+                            {"content":"How much will a shoulder MRI cost?","role":"user" }
                             ]
                     }]))
 

@@ -208,8 +208,8 @@ care_cst_agent = CareCostReactAgent(model_config=get_model_config(db_host_url=db
                                 cpt_code_retrieve_columns=["code","description"],
                                 agent_chat_model_endpoint_name="carecost_openai_endpoint",  #<< The external open AI endpoint
                                 member_id_retriever_model_endpoint_name="databricks-mixtral-8x7b-instruct",
-                                question_classifier_model_endpoint_name="databricks-meta-llama-3-1-70b-instruct",
-                                benefit_retriever_model_endpoint_name= "databricks-meta-llama-3-1-70b-instruct",
+                                question_classifier_model_endpoint_name="databricks-meta-llama-3-3-70b-instruct",
+                                benefit_retriever_model_endpoint_name= "databricks-meta-llama-3-3-70b-instruct",
                                 summarizer_model_endpoint_name="databricks-dbrx-instruct",                       
                                 default_parameter_json_string='{"member_id":"1234"}'))
 

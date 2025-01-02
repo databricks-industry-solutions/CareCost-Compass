@@ -67,7 +67,7 @@ categories_and_description = {
 }
 
 qc = QuestionClassifier(
-    model_endpoint_name="databricks-meta-llama-3-1-70b-instruct", 
+    model_endpoint_name="databricks-meta-llama-3-3-70b-instruct", 
     categories_and_description=categories_and_description
     ).get()
 
@@ -104,7 +104,7 @@ with mlflow.start_run(experiment_id=experiment.experiment_id,
                                    run_name=f"01_question_classifier_{time_str}",
                                    nested=True) as qc_evaluate_run:
 
-    models_to_evaluate = ["databricks-meta-llama-3-1-70b-instruct", "databricks-mixtral-8x7b-instruct"]
+    models_to_evaluate = ["databricks-meta-llama-3-3-70b-instruct", "databricks-mixtral-8x7b-instruct"]
 
     results = []
     for model_name in models_to_evaluate:
@@ -156,7 +156,7 @@ retriever_config = RetrieverConfig(vector_search_endpoint_name="care_cost_vs_end
                             vector_index_id_column="id",
                             retrieve_columns=["id","content"])
 
-br = BenefitsRAG(model_endpoint_name="databricks-meta-llama-3-1-70b-instruct",
+br = BenefitsRAG(model_endpoint_name="databricks-meta-llama-3-3-70b-instruct",
                  retriever_config=retriever_config
                  )
 
@@ -210,7 +210,7 @@ with mlflow.start_run(experiment_id=experiment.experiment_id,
                                    run_name=f"02_benefits_rag_{time_str}",
                                    nested=True) as qc_evaluate_run:
     
-    models_to_evaluate = ["databricks-meta-llama-3-1-70b-instruct", "databricks-dbrx-instruct"]
+    models_to_evaluate = ["databricks-meta-llama-3-3-70b-instruct", "databricks-dbrx-instruct"]
 
     results = []
     for model_name in models_to_evaluate:
@@ -348,7 +348,7 @@ retriever_config = RetrieverConfig(vector_search_endpoint_name="care_cost_vs_end
                             vector_index_id_column="id",
                             retrieve_columns=["id","content"])
 
-br = BenefitsRAG(model_endpoint_name="databricks-meta-llama-3-1-70b-instruct", 
+br = BenefitsRAG(model_endpoint_name="databricks-meta-llama-3-3-70b-instruct", 
                  retriever_config=retriever_config
                  ).get()
                  
@@ -389,7 +389,7 @@ retriever_config = RetrieverConfig(vector_search_endpoint_name="care_cost_vs_end
                             vector_index_id_column="id",
                             retrieve_columns=["id","content"])
 
-br = BenefitsRAG(model_endpoint_name="databricks-meta-llama-3-1-70b-instruct",
+br = BenefitsRAG(model_endpoint_name="databricks-meta-llama-3-3-70b-instruct",
                  retriever_config=retriever_config
                  ).get()
 
@@ -405,7 +405,7 @@ cost_result = mcc.run({"benefit":benefit,
          "procedure_cost":procedure_cost, 
          "member_deductibles": accum_result})
 
-rs = ResponseSummarizer("databricks-meta-llama-3-1-70b-instruct").get()
+rs = ResponseSummarizer("databricks-meta-llama-3-3-70b-instruct").get()
 summary = rs.run({"notes":cost_result.notes})
 
 print(summary)
