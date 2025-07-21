@@ -42,7 +42,7 @@ master_run_info = mlflow.start_run(experiment_id=experiment.experiment_id,
 
 # COMMAND ----------
 
-mi = MemberIdRetriever("databricks-mixtral-8x7b-instruct").get()
+mi = MemberIdRetriever("databricks-claude-3-7-sonnet").get()
 mi.run({"question":"Member id is:1234."})
 
 # COMMAND ----------
@@ -104,7 +104,7 @@ with mlflow.start_run(experiment_id=experiment.experiment_id,
                                    run_name=f"01_question_classifier_{time_str}",
                                    nested=True) as qc_evaluate_run:
 
-    models_to_evaluate = ["databricks-meta-llama-3-3-70b-instruct", "databricks-mixtral-8x7b-instruct"]
+    models_to_evaluate = ["databricks-meta-llama-3-3-70b-instruct", "databricks-claude-3-7-sonnet"]
 
     results = []
     for model_name in models_to_evaluate:
@@ -210,7 +210,7 @@ with mlflow.start_run(experiment_id=experiment.experiment_id,
                                    run_name=f"02_benefits_rag_{time_str}",
                                    nested=True) as qc_evaluate_run:
     
-    models_to_evaluate = ["databricks-meta-llama-3-3-70b-instruct", "databricks-dbrx-instruct"]
+    models_to_evaluate = ["databricks-meta-llama-3-3-70b-instruct", "databricks-claude-3-7-sonnet"]
 
     results = []
     for model_name in models_to_evaluate:

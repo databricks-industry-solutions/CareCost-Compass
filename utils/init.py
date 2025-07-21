@@ -1,6 +1,19 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC ##### Define variables and utility functions
+# MAGIC ##### Install required libraries, define variables and utility functions
+
+# COMMAND ----------
+
+# MAGIC %pip install --quiet opencv-python==4.8.0.74 camelot-py==0.11.0 pdfplumber==0.11.4
+# MAGIC %pip install --quiet typing-inspect==0.8.0 typing-extensions==4.12.2
+# MAGIC %pip install --quiet mlflow==2.16.2 databricks-vectorsearch==0.40 langchain==0.3.0 langchain-community==0.3.0 mlflow[databricks] databricks-agents==0.6.0 databricks-sdk==0.28.0 
+# MAGIC %pip install --quiet camelot-py[cv]==0.11.0
+# MAGIC %pip install --quiet 'PyPDF2<3.0'
+# MAGIC
+
+# COMMAND ----------
+
+dbutils.library.restartPython()
 
 # COMMAND ----------
 

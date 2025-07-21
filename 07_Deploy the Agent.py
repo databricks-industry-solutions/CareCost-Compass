@@ -110,7 +110,7 @@ test_model_config = get_model_config(environment="dev",
                                 cpt_code_retrieve_columns=["code","description"],
                                 question_classifier_model_endpoint_name="databricks-meta-llama-3-3-70b-instruct",
                                 benefit_retriever_model_endpoint_name= "databricks-meta-llama-3-3-70b-instruct",
-                                summarizer_model_endpoint_name="databricks-dbrx-instruct",                       
+                                summarizer_model_endpoint_name="databricks-claude-3-7-sonnet",                       
                                 default_parameter_json_string='{"member_id":"1234"}')
 
 test_model = CareCostCompassAgent()
@@ -313,7 +313,7 @@ with mlflow.start_run(experiment_id=experiment.experiment_id,
                     cpt_code_retrieve_columns=["code","description"],
                     question_classifier_model_endpoint_name="databricks-meta-llama-3-3-70b-instruct",
                     benefit_retriever_model_endpoint_name= "databricks-meta-llama-3-3-70b-instruct",
-                    summarizer_model_endpoint_name="databricks-dbrx-instruct",                       
+                    summarizer_model_endpoint_name="databricks-claude-3-7-sonnet",                       
                     default_parameter_json_string='{"member_id":"1234"}')
 
     mlflow.pyfunc.log_model(
@@ -440,3 +440,7 @@ display_results(result["predictions"]["content"])
 # MAGIC ###Gather Feedback
 # MAGIC Now that you have deployed the agent as an endpoint, you can use the review app to gather feedback from your stake-holders. 
 # MAGIC Read this [documentation](https://docs.databricks.com/en/generative-ai/agent-evaluation/human-evaluation.html#review-app-ui) for detailed explanation on how to use the Review App.
+
+# COMMAND ----------
+
+
