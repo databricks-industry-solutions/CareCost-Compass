@@ -54,9 +54,9 @@ The given notebooks will build all the application components step-by-step. The 
 To run this demo in a Databricks Workspace, follow the below steps
 1. Use [Dabaricks Git Folders](https://docs.databricks.com/en/repos/index.html) and clone the repo into your workspace
 2. Create a `single-node` cluster for running the notebooks. This code is tested on a `DBR 14.3LTS ML` cluster. 
-3. Add `scripts/init_script.sh` to the cluster by following this [documentation](https://docs.databricks.com/en/init-scripts/cluster-scoped.html). 
-4. Open the `utils/init` notebook and update the values in `Cmd 4` appropriately
-5. Start by running notebooks `01 Setup Data` to `08_Building Evaluation Dataframe using Review App  Data` sequentially. Follow along the documentation in the notebooks
+3. Open the `utils/init` notebook and update the values in `Cmd 4` appropriately
+4. Start by running notebooks `01 Setup Data` to `08_Building Evaluation Dataframe using Review App  Data` sequentially. Follow along the documentation in the notebooks
+5. Use the `10_Deploy_Databricks_App_UI` to deploy a basic UI using Databricks Apps. Follow the instructions on the notebook
 
 ### Copyright/License Info
 Copyright Databricks, Inc. [2024]. The source in this notebook is provided subject to the [Databricks License](https://databricks.com/db-license-source). 
